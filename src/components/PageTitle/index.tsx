@@ -1,10 +1,11 @@
 import { memo, useEffect } from 'react';
 
-import { BRANDING_NAME } from '@/const/branding';
+import { BRANDING_NAME, BRANDING_TITLE_SUFFIX } from '@/const/branding';
 
 const PageTitle = memo<{ title: string }>(({ title }) => {
   useEffect(() => {
-    document.title = title ? `${title} · ${BRANDING_NAME}` : BRANDING_NAME;
+    const titleSuffix = BRANDING_TITLE_SUFFIX || ` · ${BRANDING_NAME}`;
+    document.title = title ? `${title}${titleSuffix}` : BRANDING_NAME;
   }, [title]);
 
   return null;

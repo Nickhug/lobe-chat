@@ -33,7 +33,7 @@
     "title": "Plugin Marketplace"
   },
   "welcome": {
-    "description": "{{appName}} brings you the best UI experience for ChatGPT, Claude, Gemini, and OLLaMA.",
-    "title": "Welcome to {{appName}}: Your personal AI productivity tool for a smarter brain."
+    "description": "{{appName}} is your AI-powered real estate assistant for property analysis and exploration.",
+    "title": "Welcome to {{appName}}: Your AI real estate co-pilot."
   }
 }

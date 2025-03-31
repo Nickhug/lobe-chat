@@ -20,6 +20,9 @@ import {
   ChatCompetitionOptions,
   ChatCompletionTool,
   ChatStreamPayload,
+  Embeddings,
+  EmbeddingsOptions,
+  EmbeddingsPayload,
   OpenAIChatMessage,
   UserMessageContentPart,
 } from '../types';
@@ -217,6 +220,50 @@ export class LobeGoogleAI implements LobeRuntimeAI {
         };
       })
       .filter(Boolean) as ChatModelCard[];
+  }
+
+  async embeddings(payload: EmbeddingsPayload, options?: EmbeddingsOptions): Promise<Embeddings[]> {
+    try {
+      const input = Array.isArray(payload.input) ? payload.input : [payload.input];
+
+      // Process each input text and get embeddings
+      const results = await Promise.all(
+        input.map(async (text) => {
+          const embedUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1alpha/models/${payload.model}:embedContent?key=${this.apiKey}`;
+
+          const response = await fetch(embedUrl, {
+            body: JSON.stringify({
+              content: { parts: [{ text }] },
+              taskType: 'RETRIEVAL_DOCUMENT',
+              title: 'Embedding request',
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            signal: options?.signal,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Google AI embedding error:', errorData);
+            throw new Error(`Google AI embedding failed: ${errorData}`);
+          }
+
+          const data = await response.json();
+          return data.embedding.values;
+        }),
+      );
+
+      return results;
+    } catch (e) {
+      const err = e as Error;
+      console.error('Google AI embedding error:', err);
+
+      const { errorType, error } = this.parseErrorMessage(err.message);
+
+      throw AgentRuntimeError.chat({ error, errorType, provider: this.provider });
+    }
   }
 
   private buildPayload(payload: ChatStreamPayload) {

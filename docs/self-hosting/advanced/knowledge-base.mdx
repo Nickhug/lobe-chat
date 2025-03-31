@@ -66,9 +66,22 @@ By correctly configuring and integrating these core components, you can build a 
 ### 5. Custom Embedding
 
 - **Purpose**: Use different Embedding generate vector representations for semantic search
-- **Options**: support model provider list: zhipu/github/openai/bedrock/ollama
+- **Options**: support model provider list: zhipu/github/openai/bedrock/ollama/google
 - **Deployment Tip**: Used to configure the default Embedding model
 
 ```
 environment: DEFAULT_FILES_CONFIG=embedding_model=openai/embedding-text-3-small
+```
+
+Examples for different providers:
+
+```
+# OpenAI embedding (default)
+DEFAULT_FILES_CONFIG=embedding_model=openai/embedding-text-3-small
+
+# Google embedding
+DEFAULT_FILES_CONFIG=embedding_model=google/gemini-embedding-exp-03-07
+
+# Ollama embedding (requires Ollama setup)
+DEFAULT_FILES_CONFIG=embedding_model=ollama/llama2
 ```

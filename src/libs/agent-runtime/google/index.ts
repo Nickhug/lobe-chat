@@ -226,18 +226,31 @@ export class LobeGoogleAI implements LobeRuntimeAI {
     try {
       const input = Array.isArray(payload.input) ? payload.input : [payload.input];
 
-      // Use OpenAI compatibility layer instead
-      const openaiCompatUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai/embeddings`;
+      // Clean up model name - remove google/ prefix if present
+      const modelName = payload.model.includes('/') ? payload.model.split('/')[1] : payload.model;
+
+      // Log the attempt for debugging
+      console.log(`Attempting Google embeddings with model: ${modelName}`);
+
+      // Try using query parameter instead of header auth
+      const openaiCompatUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai/embeddings?key=${this.apiKey}`;
 
       console.log(`Using OpenAI compatibility layer for embeddings at ${openaiCompatUrl}`);
 
+      if (!this.apiKey || this.apiKey.length < 10) {
+        throw new Error('Invalid or missing Google API key');
+      }
+
+      const requestBody = {
+        input,
+        model: modelName,
+      };
+
+      console.log(`Request body: ${JSON.stringify(requestBody)}`);
+
       const response = await fetch(openaiCompatUrl, {
-        body: JSON.stringify({
-          input,
-          model: payload.model.includes('/') ? payload.model.split('/')[1] : payload.model, // Extract model name without prefix
-        }),
+        body: JSON.stringify(requestBody),
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         method: 'POST',
@@ -246,11 +259,14 @@ export class LobeGoogleAI implements LobeRuntimeAI {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Google AI embedding error:', errorData);
-        throw new Error(`Google AI embedding failed: ${errorData}`);
+        console.error(`Google AI embedding error (${response.status}): ${errorData}`);
+        throw new Error(`Google AI embedding failed with status ${response.status}: ${errorData}`);
       }
 
       const data = await response.json();
+
+      // Log successful response structure for debugging
+      console.log(`Response structure: ${JSON.stringify(Object.keys(data))}`);
 
       // Format is different with OpenAI compatibility layer
       if (!data.data || !Array.isArray(data.data)) {
@@ -263,6 +279,15 @@ export class LobeGoogleAI implements LobeRuntimeAI {
     } catch (e) {
       const err = e as Error;
       console.error('Google AI embedding error:', err);
+
+      // Add more detailed error logging
+      if (err.message.includes('RESOURCE_EXHAUSTED')) {
+        console.error('Rate limit exceeded. Check your quota or try again later.');
+      } else if (err.message.includes('API_KEY_INVALID')) {
+        console.error('The API key appears to be invalid or has incorrect permissions.');
+      } else if (err.message.includes('PERMISSION_DENIED')) {
+        console.error('Permission denied. Verify your API key has access to embedding models.');
+      }
 
       const { errorType, error } = this.parseErrorMessage(err.message);
 

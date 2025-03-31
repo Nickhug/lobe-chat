@@ -226,55 +226,40 @@ export class LobeGoogleAI implements LobeRuntimeAI {
     try {
       const input = Array.isArray(payload.input) ? payload.input : [payload.input];
 
-      // Process each input text and get embeddings
-      const results = await Promise.all(
-        input.map(async (text) => {
-          // Use v1beta endpoint as per Google documentation
-          const embedUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/models/${payload.model}:embedContent?key=${this.apiKey}`;
+      // Use OpenAI compatibility layer instead
+      const openaiCompatUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai/embeddings`;
 
-          // Format payload exactly as shown in Google documentation
-          const requestBody = {
-            content: {
-              parts: [
-                {
-                  text,
-                },
-              ],
-            },
-            // Optional but recommended for embeddings
-            taskType: 'RETRIEVAL_DOCUMENT',
-          };
+      console.log(`Using OpenAI compatibility layer for embeddings at ${openaiCompatUrl}`);
 
-          console.log(`Embedding request to ${embedUrl}`);
-
-          const response = await fetch(embedUrl, {
-            body: JSON.stringify(requestBody),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            method: 'POST',
-            signal: options?.signal,
-          });
-
-          if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Google AI embedding error:', errorData);
-            throw new Error(`Google AI embedding failed: ${errorData}`);
-          }
-
-          const data = await response.json();
-
-          // The expected response format has embedding values in this path
-          if (!data.embedding?.values) {
-            console.error('Unexpected response format:', data);
-            throw new Error('Google AI embedding returned unexpected response format');
-          }
-
-          return data.embedding.values;
+      const response = await fetch(openaiCompatUrl, {
+        body: JSON.stringify({
+          input,
+          model: payload.model.includes('/') ? payload.model.split('/')[1] : payload.model, // Extract model name without prefix
         }),
-      );
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        signal: options?.signal,
+      });
 
-      return results;
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Google AI embedding error:', errorData);
+        throw new Error(`Google AI embedding failed: ${errorData}`);
+      }
+
+      const data = await response.json();
+
+      // Format is different with OpenAI compatibility layer
+      if (!data.data || !Array.isArray(data.data)) {
+        console.error('Unexpected response format:', data);
+        throw new Error('Google AI embedding returned unexpected response format');
+      }
+
+      // Extract embeddings from OpenAI format response
+      return data.data.map((item: any) => item.embedding);
     } catch (e) {
       const err = e as Error;
       console.error('Google AI embedding error:', err);

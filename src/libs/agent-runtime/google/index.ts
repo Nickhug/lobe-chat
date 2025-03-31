@@ -229,7 +229,15 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Clean up model name - remove google/ prefix if present
       const modelName = payload.model.includes('/') ? payload.model.split('/')[1] : payload.model;
 
-      console.log(`Attempting Google embeddings with model: ${modelName}`);
+      // Determine the appropriate dimension based on the model
+      // Use 1536 for gemini-embedding-exp-03-07 to match OpenAI embedding dimensions
+      // For text-embedding-004, use its native 768 dimensions
+      const useSpecificDimension = modelName === 'gemini-embedding-exp-03-07';
+      const dimensions = useSpecificDimension ? 1536 : undefined;
+
+      console.log(
+        `Attempting Google embeddings with model: ${modelName}${dimensions ? ` (dimensions: ${dimensions})` : ''}`,
+      );
 
       // Import OpenAI client dynamically to avoid bundling issues
       const { OpenAI } = await import('openai');
@@ -243,16 +251,21 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       console.log(`Using OpenAI compatibility layer for embeddings`);
 
       // Use the OpenAI client's embeddings.create method directly
-      const embedding = await openai.embeddings.create(
-        {
-          encoding_format: 'float',
-          input,
-          model: modelName,
-        },
-        {
-          signal: options?.signal,
-        },
-      );
+      // Add dimensions parameter for models that support it (gemini-embedding-exp-03-07)
+      const embeddingParams: any = {
+        encoding_format: 'float',
+        input,
+        model: modelName,
+      };
+
+      // Only add dimensions parameter for models that support it
+      if (useSpecificDimension && dimensions) {
+        embeddingParams.dimensions = dimensions;
+      }
+
+      const embedding = await openai.embeddings.create(embeddingParams, {
+        signal: options?.signal,
+      });
 
       console.log(`Successfully received embeddings`);
 
@@ -271,6 +284,10 @@ export class LobeGoogleAI implements LobeRuntimeAI {
         console.error('Permission denied. Verify your API key has access to embedding models.');
       } else if (err.message.includes('INVALID_ARGUMENT')) {
         console.error('Invalid argument in request. Check model name and input format.');
+      } else if (err.message.includes('dimensions')) {
+        console.error(
+          'Dimensions parameter issue. Verify the model supports the requested dimensions.',
+        );
       }
 
       const { errorType, error } = this.parseErrorMessage(err.message);

@@ -229,14 +229,11 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Clean up model name - remove google/ prefix if present
       const modelName = payload.model.includes('/') ? payload.model.split('/')[1] : payload.model;
 
-      // Determine the appropriate dimension based on the model
-      // Use 1536 for gemini-embedding-exp-03-07 to match OpenAI embedding dimensions
-      // For text-embedding-004, use its native 768 dimensions
-      const useSpecificDimension = modelName === 'gemini-embedding-exp-03-07';
-      const dimensions = useSpecificDimension ? 1536 : undefined;
+      // Get expected dimensions from database
+      const EXPECTED_DIMENSION = 1536; // Default to OpenAI's dimension
 
       console.log(
-        `Attempting Google embeddings with model: ${modelName}${dimensions ? ` (dimensions: ${dimensions})` : ''}`,
+        `Attempting Google embeddings with model: ${modelName} (dimensions: ${EXPECTED_DIMENSION})`,
       );
 
       // Import OpenAI client dynamically to avoid bundling issues
@@ -251,26 +248,51 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       console.log(`Using OpenAI compatibility layer for embeddings`);
 
       // Use the OpenAI client's embeddings.create method directly
-      // Add dimensions parameter for models that support it (gemini-embedding-exp-03-07)
+      // Always specify dimensions parameter for consistency
       const embeddingParams: any = {
+        dimensions: EXPECTED_DIMENSION,
         encoding_format: 'float',
         input,
         model: modelName,
       };
 
-      // Only add dimensions parameter for models that support it
-      if (useSpecificDimension && dimensions) {
-        embeddingParams.dimensions = dimensions;
-      }
-
       const embedding = await openai.embeddings.create(embeddingParams, {
         signal: options?.signal,
       });
 
-      console.log(`Successfully received embeddings`);
-
       // Extract just the embeddings from the response
-      return embedding.data.map((item) => item.embedding);
+      const vectors = embedding.data.map((item) => item.embedding);
+
+      // Debug log the actual dimension of the first vector
+      if (vectors.length > 0) {
+        console.log(`Received embeddings with actual dimension: ${vectors[0].length}`);
+
+        // If dimensions don't match exactly, this could cause the database error
+        if (vectors[0].length !== EXPECTED_DIMENSION) {
+          console.error(
+            `Dimension mismatch! Expected ${EXPECTED_DIMENSION} but got ${vectors[0].length}`,
+          );
+
+          // Force the correct dimension by truncating or padding
+          vectors.forEach((vector) => {
+            if (vector.length > EXPECTED_DIMENSION) {
+              // Truncate if too long
+              vector.length = EXPECTED_DIMENSION;
+            } else if (vector.length < EXPECTED_DIMENSION) {
+              // Pad with zeros if too short
+              while (vector.length < EXPECTED_DIMENSION) {
+                vector.push(0);
+              }
+            }
+          });
+
+          console.log(`Adjusted vectors to exact dimension: ${EXPECTED_DIMENSION}`);
+        }
+      }
+
+      console.log(`Successfully prepared embeddings for database storage`);
+
+      return vectors;
     } catch (e) {
       const err = e as Error;
       console.error('Google AI embedding error:', err);
@@ -287,6 +309,10 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       } else if (err.message.includes('dimensions')) {
         console.error(
           'Dimensions parameter issue. Verify the model supports the requested dimensions.',
+        );
+      } else if (err.message.includes('CheckExpectedDim')) {
+        console.error(
+          'PGVector dimension mismatch error. The database expects a different vector dimension.',
         );
       }
 

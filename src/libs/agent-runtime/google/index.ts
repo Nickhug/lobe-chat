@@ -232,8 +232,8 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Log the attempt for debugging
       console.log(`Attempting Google embeddings with model: ${modelName}`);
 
-      // Try using query parameter instead of header auth
-      const openaiCompatUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai/embeddings?key=${this.apiKey}`;
+      // Use OpenAI compatibility layer - the URL should NOT include the API key
+      const openaiCompatUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai/embeddings`;
 
       console.log(`Using OpenAI compatibility layer for embeddings at ${openaiCompatUrl}`);
 
@@ -248,9 +248,11 @@ export class LobeGoogleAI implements LobeRuntimeAI {
 
       console.log(`Request body: ${JSON.stringify(requestBody)}`);
 
+      // Important: Use Authorization: Bearer header instead of query parameter
       const response = await fetch(openaiCompatUrl, {
         body: JSON.stringify(requestBody),
         headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         method: 'POST',
@@ -287,6 +289,8 @@ export class LobeGoogleAI implements LobeRuntimeAI {
         console.error('The API key appears to be invalid or has incorrect permissions.');
       } else if (err.message.includes('PERMISSION_DENIED')) {
         console.error('Permission denied. Verify your API key has access to embedding models.');
+      } else if (err.message.includes('INVALID_ARGUMENT')) {
+        console.error('Invalid argument in request. Check model name and input format.');
       }
 
       const { errorType, error } = this.parseErrorMessage(err.message);

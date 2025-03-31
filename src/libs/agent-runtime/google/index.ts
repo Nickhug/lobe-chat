@@ -232,10 +232,12 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Log the attempt for debugging
       console.log(`Attempting Google embeddings with model: ${modelName}`);
 
-      // Use OpenAI compatibility layer - the URL should NOT include the API key
-      const openaiCompatUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai/embeddings`;
+      // Use correctly structured base URL for OpenAI compatibility layer
+      // The embeddings endpoint is not part of the base URL
+      const baseUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai`;
+      const embedUrl = `${baseUrl}/embeddings`;
 
-      console.log(`Using OpenAI compatibility layer for embeddings at ${openaiCompatUrl}`);
+      console.log(`Using OpenAI compatibility layer at: ${baseUrl}`);
 
       if (!this.apiKey || this.apiKey.length < 10) {
         throw new Error('Invalid or missing Google API key');
@@ -248,8 +250,8 @@ export class LobeGoogleAI implements LobeRuntimeAI {
 
       console.log(`Request body: ${JSON.stringify(requestBody)}`);
 
-      // Important: Use Authorization: Bearer header instead of query parameter
-      const response = await fetch(openaiCompatUrl, {
+      // Use Bearer token authentication as shown in Google's examples
+      const response = await fetch(embedUrl, {
         body: JSON.stringify(requestBody),
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,

@@ -229,14 +229,21 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Process each input text and get embeddings
       const results = await Promise.all(
         input.map(async (text) => {
-          const embedUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1alpha/models/${payload.model}:embedContent?key=${this.apiKey}`;
+          // Use v1beta endpoint as per Google documentation
+          const embedUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/models/${payload.model}:embedContent?key=${this.apiKey}`;
+
+          // Format payload according to Google's documentation
+          const requestBody = {
+            content: {
+              parts: [{ text }],
+            },
+            taskType: 'RETRIEVAL_DOCUMENT',
+          };
+
+          console.log(`Embedding request to ${embedUrl} with model ${payload.model}`);
 
           const response = await fetch(embedUrl, {
-            body: JSON.stringify({
-              content: { parts: [{ text }] },
-              taskType: 'RETRIEVAL_DOCUMENT',
-              title: 'Embedding request',
-            }),
+            body: JSON.stringify(requestBody),
             headers: {
               'Content-Type': 'application/json',
             },
@@ -251,6 +258,13 @@ export class LobeGoogleAI implements LobeRuntimeAI {
           }
 
           const data = await response.json();
+
+          // The expected response format has embedding values in this path
+          if (!data.embedding?.values) {
+            console.error('Unexpected response format:', data);
+            throw new Error('Google AI embedding returned unexpected response format');
+          }
+
           return data.embedding.values;
         }),
       );

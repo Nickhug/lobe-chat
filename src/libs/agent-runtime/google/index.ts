@@ -229,57 +229,35 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Clean up model name - remove google/ prefix if present
       const modelName = payload.model.includes('/') ? payload.model.split('/')[1] : payload.model;
 
-      // Log the attempt for debugging
       console.log(`Attempting Google embeddings with model: ${modelName}`);
 
-      // Use correctly structured base URL for OpenAI compatibility layer
-      // The embeddings endpoint is not part of the base URL
-      const baseUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai`;
-      const embedUrl = `${baseUrl}/embeddings`;
+      // Import OpenAI client dynamically to avoid bundling issues
+      const { OpenAI } = await import('openai');
 
-      console.log(`Using OpenAI compatibility layer at: ${baseUrl}`);
-
-      if (!this.apiKey || this.apiKey.length < 10) {
-        throw new Error('Invalid or missing Google API key');
-      }
-
-      const requestBody = {
-        input,
-        model: modelName,
-      };
-
-      console.log(`Request body: ${JSON.stringify(requestBody)}`);
-
-      // Use Bearer token authentication as shown in Google's examples
-      const response = await fetch(embedUrl, {
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        signal: options?.signal,
+      // Create OpenAI client with Google's compatibility layer
+      const openai = new OpenAI({
+        apiKey: this.apiKey,
+        baseURL: `${this.baseURL || DEFAULT_BASE_URL}/v1beta/openai`,
       });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error(`Google AI embedding error (${response.status}): ${errorData}`);
-        throw new Error(`Google AI embedding failed with status ${response.status}: ${errorData}`);
-      }
+      console.log(`Using OpenAI compatibility layer for embeddings`);
 
-      const data = await response.json();
+      // Use the OpenAI client's embeddings.create method directly
+      const embedding = await openai.embeddings.create(
+        {
+          encoding_format: 'float',
+          input,
+          model: modelName,
+        },
+        {
+          signal: options?.signal,
+        },
+      );
 
-      // Log successful response structure for debugging
-      console.log(`Response structure: ${JSON.stringify(Object.keys(data))}`);
+      console.log(`Successfully received embeddings`);
 
-      // Format is different with OpenAI compatibility layer
-      if (!data.data || !Array.isArray(data.data)) {
-        console.error('Unexpected response format:', data);
-        throw new Error('Google AI embedding returned unexpected response format');
-      }
-
-      // Extract embeddings from OpenAI format response
-      return data.data.map((item: any) => item.embedding);
+      // Extract just the embeddings from the response
+      return embedding.data.map((item) => item.embedding);
     } catch (e) {
       const err = e as Error;
       console.error('Google AI embedding error:', err);

@@ -232,19 +232,16 @@ export class LobeGoogleAI implements LobeRuntimeAI {
           // Use v1beta endpoint as per Google documentation
           const embedUrl = `${this.baseURL || DEFAULT_BASE_URL}/v1beta/models/${payload.model}:embedContent?key=${this.apiKey}`;
 
-          // Format payload according to Google's exact cURL example
+          // Format payload exactly as shown in Google documentation
           const requestBody = {
-            // Include models/ prefix in the body
-content: {
-              // "content" singular, not "contents"
+            content: {
               parts: [
                 {
                   text,
                 },
               ],
-            }, 
-            model: `models/${payload.model}`,
-            // taskType is optional, but can include it if needed
+            },
+            // Optional but recommended for embeddings
             taskType: 'RETRIEVAL_DOCUMENT',
           };
 

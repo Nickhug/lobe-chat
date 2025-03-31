@@ -229,11 +229,12 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Clean up model name - remove google/ prefix if present
       const modelName = payload.model.includes('/') ? payload.model.split('/')[1] : payload.model;
 
-      // Get expected dimensions from database
-      const EXPECTED_DIMENSION = 1536; // Default to OpenAI's dimension
+      // Use the full dimensions for Gemini embedding model (3072)
+      // Don't specify dimensions for other models to use their defaults
+      const useNativeDimensions = modelName === 'gemini-embedding-exp-03-07';
 
       console.log(
-        `Attempting Google embeddings with model: ${modelName} (dimensions: ${EXPECTED_DIMENSION})`,
+        `Attempting Google embeddings with model: ${modelName}${useNativeDimensions ? ' (using native 3072 dimensions)' : ''}`,
       );
 
       // Import OpenAI client dynamically to avoid bundling issues
@@ -248,13 +249,14 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       console.log(`Using OpenAI compatibility layer for embeddings`);
 
       // Use the OpenAI client's embeddings.create method directly
-      // Always specify dimensions parameter for consistency
+      // For Gemini, don't specify dimensions to get full 3072-dimensional vectors
       const embeddingParams: any = {
-        dimensions: EXPECTED_DIMENSION,
         encoding_format: 'float',
         input,
         model: modelName,
       };
+
+      // No dimensions parameter - let the model use its native dimensions
 
       const embedding = await openai.embeddings.create(embeddingParams, {
         signal: options?.signal,
@@ -266,28 +268,6 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       // Debug log the actual dimension of the first vector
       if (vectors.length > 0) {
         console.log(`Received embeddings with actual dimension: ${vectors[0].length}`);
-
-        // If dimensions don't match exactly, this could cause the database error
-        if (vectors[0].length !== EXPECTED_DIMENSION) {
-          console.error(
-            `Dimension mismatch! Expected ${EXPECTED_DIMENSION} but got ${vectors[0].length}`,
-          );
-
-          // Force the correct dimension by truncating or padding
-          vectors.forEach((vector) => {
-            if (vector.length > EXPECTED_DIMENSION) {
-              // Truncate if too long
-              vector.length = EXPECTED_DIMENSION;
-            } else if (vector.length < EXPECTED_DIMENSION) {
-              // Pad with zeros if too short
-              while (vector.length < EXPECTED_DIMENSION) {
-                vector.push(0);
-              }
-            }
-          });
-
-          console.log(`Adjusted vectors to exact dimension: ${EXPECTED_DIMENSION}`);
-        }
       }
 
       console.log(`Successfully prepared embeddings for database storage`);

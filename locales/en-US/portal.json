@@ -22,7 +22,9 @@
       "download": "Download PDF",
       "downloadError": "Error downloading PDF",
       "renderError": "Error rendering PDF preview",
-      "loadingPreview": "Loading PDF preview..."
+      "loadingPreview": "Loading PDF preview...",
+      "invalidFormat": "Invalid PDF data format",
+      "loadFail": "Failed to load PDF preview."
     },
     "text": {
       "download": "Download Text File"

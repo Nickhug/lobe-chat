@@ -17,31 +17,50 @@ const PDFRenderer = memo<PDFRendererProps>(({ content, title = 'document.pdf' })
   const [loading, setLoading] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null); // State for specific error message
   const [isFetching, setIsFetching] = useState<boolean>(false); // Add loading state for fetch
 
   useEffect(() => {
+    // Reset states on content change
+    setBlobUrl(null);
+    setFetchError(null);
+    setIsFetching(true);
+
     // Check if content is a valid data URL
     if (!content || !content.startsWith('data:application/pdf;base64,')) {
-      message.error(t('artifacts.pdf.invalidFormat', 'Invalid PDF data format'));
-      setBlobUrl(null);
+      const errorMsg = t('artifacts.pdf.invalidFormat', 'Invalid PDF data format');
+      console.error('PDF Render Error:', errorMsg, {
+        contentStart: content.slice(0, 100) + '...',
+      });
+      message.error(errorMsg);
+      setFetchError(errorMsg);
+      setIsFetching(false);
       return;
     }
 
     let currentBlobUrl: string | null = null;
     const fetchBlob = async () => {
-      setIsFetching(true); // Start loading
-      setBlobUrl(null); // Clear previous blob url
       try {
         const response = await fetch(content);
         if (!response.ok) {
-          throw new Error(`Failed to fetch data URL: ${response.statusText}`);
+          throw new Error(`Fetch failed with status: ${response.status} ${response.statusText}`);
         }
         const blob = await response.blob();
+
+        // Verify the blob type
+        if (blob.type !== 'application/pdf') {
+          throw new Error(`Expected PDF blob, but received type: ${blob.type}`);
+        }
+
         currentBlobUrl = URL.createObjectURL(blob);
         setBlobUrl(currentBlobUrl);
-      } catch (error) {
-        console.error('Error creating PDF blob URL via fetch:', error);
-        message.error(t('artifacts.pdf.renderError', 'Error rendering PDF preview'));
+        setFetchError(null); // Clear error on success
+      } catch (error: any) {
+        // Catch specific error
+        const errorMsg = t('artifacts.pdf.renderError', 'Error rendering PDF preview');
+        console.error('Error creating PDF blob URL via fetch:', error); // Log the actual error object
+        message.error(errorMsg);
+        setFetchError(errorMsg + (error.message ? `: ${error.message}` : '')); // Set specific error message
         setBlobUrl(null);
       } finally {
         setIsFetching(false); // Stop loading
@@ -83,8 +102,8 @@ const PDFRenderer = memo<PDFRendererProps>(({ content, title = 'document.pdf' })
             title="PDF Preview"
           />
         ) : (
-          // Display error or placeholder if blobUrl is null and not fetching
-          <div>{t('artifacts.pdf.loadFail', 'Failed to load PDF preview.')}</div>
+          // Display specific error message if available, otherwise generic failure
+          <div>{fetchError || t('artifacts.pdf.loadFail', 'Failed to load PDF preview.')}</div>
         )}
       </Flexbox>
       <Flexbox align={'center'} padding={8}>

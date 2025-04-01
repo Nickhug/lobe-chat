@@ -17,32 +17,46 @@ const PDFRenderer = memo<PDFRendererProps>(({ content, title = 'document.pdf' })
   const [loading, setLoading] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState<boolean>(false); // Add loading state for fetch
 
   useEffect(() => {
-    let url: string | null = null;
-    try {
-      const byteCharacters = atob(content.split(',')[1]);
-      const byteNumbers = Array.from({length: byteCharacters.length});
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-
-      url = URL.createObjectURL(blob);
-      setBlobUrl(url);
-    } catch (error) {
-      console.error('Error creating PDF blob URL:', error);
-      message.error(t('artifacts.pdf.renderError', 'Error rendering PDF preview'));
+    // Check if content is a valid data URL
+    if (!content || !content.startsWith('data:application/pdf;base64,')) {
+      message.error(t('artifacts.pdf.invalidFormat', 'Invalid PDF data format'));
       setBlobUrl(null);
+      return;
     }
 
-    return () => {
-      if (url) {
-        URL.revokeObjectURL(url);
+    let currentBlobUrl: string | null = null;
+    const fetchBlob = async () => {
+      setIsFetching(true); // Start loading
+      setBlobUrl(null); // Clear previous blob url
+      try {
+        const response = await fetch(content);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data URL: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        currentBlobUrl = URL.createObjectURL(blob);
+        setBlobUrl(currentBlobUrl);
+      } catch (error) {
+        console.error('Error creating PDF blob URL via fetch:', error);
+        message.error(t('artifacts.pdf.renderError', 'Error rendering PDF preview'));
+        setBlobUrl(null);
+      } finally {
+        setIsFetching(false); // Stop loading
       }
     };
-  }, [content]);
+
+    fetchBlob();
+
+    // Cleanup function
+    return () => {
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+      }
+    };
+  }, [content, t]);
 
   const handleDownload = async () => {
     try {
@@ -59,7 +73,9 @@ const PDFRenderer = memo<PDFRendererProps>(({ content, title = 'document.pdf' })
   return (
     <Flexbox gap={16} style={{ flexDirection: 'column', height: '100%' }} width={'100%'}>
       <Flexbox flex={1} style={{ height: '0', overflow: 'hidden' }}>
-        {blobUrl ? (
+        {isFetching ? (
+          <div>{t('artifacts.pdf.loadingPreview', 'Loading PDF preview...')}</div>
+        ) : blobUrl ? (
           <iframe
             ref={iframeRef}
             src={blobUrl}
@@ -67,7 +83,8 @@ const PDFRenderer = memo<PDFRendererProps>(({ content, title = 'document.pdf' })
             title="PDF Preview"
           />
         ) : (
-          <div>{t('artifacts.pdf.loadingPreview', 'Loading PDF preview...')}</div>
+          // Display error or placeholder if blobUrl is null and not fetching
+          <div>{t('artifacts.pdf.loadFail', 'Failed to load PDF preview.')}</div>
         )}
       </Flexbox>
       <Flexbox align={'center'} padding={8}>

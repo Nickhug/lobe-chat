@@ -13,11 +13,16 @@
       "preview": "Preview"
     },
     "image": {
-      "download": "Download Image"
+      "download": "Download Image",
+      "openExternal": "Open Original",
+      "loadError": "Failed to load image",
+      "downloadError": "Error downloading image"
     },
     "pdf": {
       "download": "Download PDF",
-      "downloadError": "Error downloading PDF"
+      "downloadError": "Error downloading PDF",
+      "renderError": "Error rendering PDF preview",
+      "loadingPreview": "Loading PDF preview..."
     },
     "text": {
       "download": "Download Text File"

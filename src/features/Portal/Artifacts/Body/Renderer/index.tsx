@@ -10,7 +10,7 @@ import TextRenderer from './Text';
 
 const ReactRenderer = dynamic(() => import('./React'), { ssr: false });
 
-const Renderer = memo<{ content: string; title?: string, type?: string; }>(
+const Renderer = memo<{ content: string; title?: string; type?: string }>(
   ({ content, type, title }) => {
     switch (type) {
       case 'application/lobe.artifacts.react': {
@@ -44,7 +44,12 @@ const Renderer = memo<{ content: string; title?: string, type?: string; }>(
       }
 
       default: {
-        if (type?.startsWith('image/')) {
+        if (
+          type?.startsWith('image/') ||
+          (typeof content === 'string' &&
+            (content.startsWith('http://') || content.startsWith('https://')) &&
+            /\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(content))
+        ) {
           return <ImageRenderer content={content} title={title} />;
         }
         return <HTMLRenderer htmlContent={content} />;

@@ -21,10 +21,7 @@
     "pdf": {
       "download": "Download PDF",
       "downloadError": "Error downloading PDF",
-      "renderError": "Error rendering PDF preview",
-      "loadingPreview": "Loading PDF preview...",
-      "invalidFormat": "Invalid PDF data format",
-      "loadFail": "Failed to load PDF preview."
+      "exportError": "Error exporting to PDF"
     },
     "text": {
       "download": "Download Text File"
@@ -37,6 +34,15 @@
         "png": "Download as PNG",
         "svg": "Download as SVG"
       }
+    },
+    "export": {
+      "download": "Download",
+      "markdown": "Download as Markdown",
+      "text": "Download as Text",
+      "pdf": "Download as PDF",
+      "exporting": "Exporting...",
+      "exportSuccess": "Exported successfully",
+      "exportError": "Error exporting file"
     }
   },
   "emptyArtifactList": "The current Artifacts list is empty. Please use plugins in the session as needed before viewing.",

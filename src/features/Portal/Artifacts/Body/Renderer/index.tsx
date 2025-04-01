@@ -1,10 +1,10 @@
-import { Markdown, Mermaid } from '@lobehub/ui';
+import { Mermaid } from '@lobehub/ui';
 import dynamic from 'next/dynamic';
 import { memo } from 'react';
 
 import HTMLRenderer from './HTML';
 import ImageRenderer from './Image';
-import PDFRenderer from './PDF';
+import MarkdownRenderer from './Markdown';
 import SVGRender from './SVG';
 import TextRenderer from './Text';
 
@@ -32,7 +32,10 @@ const Renderer = memo<{ content: string; title?: string; type?: string }>(
       }
 
       case 'application/pdf': {
-        return <PDFRenderer content={content} title={title} />;
+        console.warn(
+          'Received application/pdf type, rendering as Markdown. Ensure content is appropriate.',
+        );
+        return <MarkdownRenderer content={content} title={title || 'document.pdf'} />;
       }
 
       case 'application/lobe.artifacts.mermaid': {
@@ -40,7 +43,7 @@ const Renderer = memo<{ content: string; title?: string; type?: string }>(
       }
 
       case 'text/markdown': {
-        return <Markdown style={{ overflow: 'auto' }}>{content}</Markdown>;
+        return <MarkdownRenderer content={content} title={title} />;
       }
 
       default: {

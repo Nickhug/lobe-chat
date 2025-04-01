@@ -12,6 +12,16 @@
       "code": "Code",
       "preview": "Preview"
     },
+    "image": {
+      "download": "Download Image"
+    },
+    "pdf": {
+      "download": "Download PDF",
+      "downloadError": "Error downloading PDF"
+    },
+    "text": {
+      "download": "Download Text File"
+    },
     "svg": {
       "copyAsImage": "Copy as Image",
       "copyFail": "Copy failed, reason: {{error}}",

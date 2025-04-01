@@ -1,7 +1,15 @@
 import { SiReact } from '@icons-pack/react-simple-icons';
 import { Icon } from '@lobehub/ui';
 import { createStyles } from 'antd-style';
-import { CodeXml, GlobeIcon, ImageIcon, Loader2, OrigamiIcon } from 'lucide-react';
+import {
+  CodeXml,
+  FileIcon,
+  FileTextIcon,
+  GlobeIcon,
+  ImageIcon,
+  Loader2,
+  OrigamiIcon,
+} from 'lucide-react';
 import { memo } from 'react';
 
 const useStyles = createStyles(({ css, token, isDarkMode }) => ({
@@ -66,7 +74,10 @@ const ArtifactIcon = memo<ArtifactProps>(({ type }) => {
       return <SiReact size={SIZE} style={{ color: theme.colorTextSecondary }} />;
     }
 
-    case 'image/svg+xml': {
+    case 'image/svg+xml':
+    case 'image/png':
+    case 'image/jpeg':
+    case 'image/gif': {
       return (
         <Icon
           icon={ImageIcon}
@@ -84,7 +95,34 @@ const ArtifactIcon = memo<ArtifactProps>(({ type }) => {
         />
       );
     }
+    case 'text/plain': {
+      return (
+        <Icon
+          icon={FileTextIcon}
+          size={{ fontSize: SIZE }}
+          style={{ color: theme.colorTextSecondary }}
+        />
+      );
+    }
+    case 'application/pdf': {
+      return (
+        <Icon
+          icon={FileIcon}
+          size={{ fontSize: SIZE }}
+          style={{ color: theme.colorTextSecondary }}
+        />
+      );
+    }
     default: {
+      if (type?.startsWith('image/')) {
+        return (
+          <Icon
+            icon={ImageIcon}
+            size={{ fontSize: SIZE }}
+            style={{ color: theme.colorTextSecondary }}
+          />
+        );
+      }
       return (
         <Icon color={theme.purple} icon={OrigamiIcon} size={{ fontSize: SIZE, strokeWidth: 1.2 }} />
       );

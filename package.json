@@ -178,6 +178,7 @@
     "jose": "^5.10.0",
     "js-sha256": "^0.11.0",
     "jsonl-parse-stringify": "^1.0.3",
+    "jspdf": "^3.0.1",
     "langchain": "^0.3.10",
     "langfuse": "3.29.1",
     "langfuse-core": "3.29.1",

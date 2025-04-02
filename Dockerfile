@@ -9,6 +9,8 @@ ARG NEXT_PUBLIC_APP_NAME="Propert AI"
 ARG NEXT_PUBLIC_DESCRIPTION="Realty Co-Pilot"
 ARG NEXT_PUBLIC_TITLE_SUFFIX=" | Propert AI"
 ARG NEXT_PUBLIC_CALL_TO_ACTION="Get Started with Propert"
+ARG NEXT_PUBLIC_AGENTS_INDEX_URL="https://lobe-chat-agents-sable.vercel.app/index.en-US.json"
+ARG NEXT_PUBLIC_PLUGINS_INDEX_URL="https://gatewa-bice.vercel.app/index.json"
 
 ENV DEBIAN_FRONTEND="noninteractive"
 
@@ -85,7 +87,9 @@ ENV NODE_OPTIONS="--max-old-space-size=8192"
 ENV NEXT_PUBLIC_APP_NAME="${NEXT_PUBLIC_APP_NAME}" \
     NEXT_PUBLIC_DESCRIPTION="${NEXT_PUBLIC_DESCRIPTION}" \
     NEXT_PUBLIC_TITLE_SUFFIX="${NEXT_PUBLIC_TITLE_SUFFIX}" \
-    NEXT_PUBLIC_CALL_TO_ACTION="${NEXT_PUBLIC_CALL_TO_ACTION}" 
+    NEXT_PUBLIC_CALL_TO_ACTION="${NEXT_PUBLIC_CALL_TO_ACTION}" \
+    NEXT_PUBLIC_AGENTS_INDEX_URL="${NEXT_PUBLIC_AGENTS_INDEX_URL}" \
+    NEXT_PUBLIC_PLUGINS_INDEX_URL="${NEXT_PUBLIC_PLUGINS_INDEX_URL}"
 
 WORKDIR /app
 
@@ -169,6 +173,10 @@ ENV MIDDLEWARE_REWRITE_THROUGH_LOCAL="1"
 # set hostname to localhost
 ENV HOSTNAME="0.0.0.0" \
     PORT="3210"
+
+# Fixed URLs for agents and plugins
+ENV NEXT_PUBLIC_AGENTS_INDEX_URL="https://lobe-chat-agents-sable.vercel.app/index.en-US.json" \
+    NEXT_PUBLIC_PLUGINS_INDEX_URL="https://gatewa-bice.vercel.app/index.json"
 
 # General Variables
 ENV ACCESS_CODE="" \

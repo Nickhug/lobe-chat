@@ -100,7 +100,9 @@ const Preview = memo(() => {
     <div className={styles.preview}>
       <div className={styles.background} id={'preview'}>
         <Center className={styles.container} gap={12} padding={24}>
-          <ProductLogo size={24} type={'text'} />
+          <Flexbox align={'center'} gap={6} horizontal>
+            <ProductLogo size={24} />
+          </Flexbox>
           <div className={styles.title}>{t('stats.share.title')}</div>
           <Flexbox align={'center'} horizontal>
             <UserAvatar

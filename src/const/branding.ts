@@ -5,7 +5,7 @@
 export const LOBE_CHAT_CLOUD = 'LobeChat Cloud';
 
 // Hard-coded branding values
-export const BRANDING_NAME = 'Propert AI';
+export const BRANDING_NAME = '';
 export const BRANDING_DESCRIPTION = process.env.NEXT_PUBLIC_DESCRIPTION || '';
 export const BRANDING_TITLE_SUFFIX = process.env.NEXT_PUBLIC_TITLE_SUFFIX || '';
 export const BRANDING_CALL_TO_ACTION = process.env.NEXT_PUBLIC_CALL_TO_ACTION || '';

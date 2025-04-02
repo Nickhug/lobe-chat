@@ -9,7 +9,7 @@ export const isUsePgliteDB = process.env.NEXT_PUBLIC_CLIENT_DB === 'pglite';
 
 export const isDeprecatedEdition = !isServerMode && !isUsePgliteDB;
 
-// @ts-ignore
-export const isCustomBranding = BRANDING_NAME !== 'LobeChat';
-// @ts-ignore
-export const isCustomORG = ORG_NAME !== 'LobeHub';
+// Always use custom branding
+export const isCustomBranding = true;
+// Always use custom org
+export const isCustomORG = true;

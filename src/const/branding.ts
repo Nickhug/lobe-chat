@@ -4,14 +4,14 @@
 
 export const LOBE_CHAT_CLOUD = 'LobeChat Cloud';
 
-// Use environment variables if they exist, otherwise fall back to defaults
-export const BRANDING_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'LobeChat';
+// Hard-coded branding values
+export const BRANDING_NAME = 'Propert AI';
 export const BRANDING_DESCRIPTION = process.env.NEXT_PUBLIC_DESCRIPTION || '';
 export const BRANDING_TITLE_SUFFIX = process.env.NEXT_PUBLIC_TITLE_SUFFIX || '';
 export const BRANDING_CALL_TO_ACTION = process.env.NEXT_PUBLIC_CALL_TO_ACTION || '';
-export const BRANDING_LOGO_URL = process.env.NEXT_PUBLIC_LOGO_URL || '';
+export const BRANDING_LOGO_URL = '/images/logo/propert-logo.png';
 
-export const ORG_NAME = process.env.NEXT_PUBLIC_ORG_NAME || 'LobeHub';
+export const ORG_NAME = 'Propert';
 
 export const BRANDING_URL = {
   help: undefined,

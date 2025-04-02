@@ -41,7 +41,8 @@ const CustomImageLogo = memo<Omit<ImageProps, 'alt' | 'src'> & { size: number }>
         height={size}
         src={BRANDING_LOGO_URL}
         unoptimized={true}
-        width={size}
+        width={size * 3}
+        style={{ objectFit: 'contain' }}
         {...rest}
       />
     );
@@ -72,17 +73,6 @@ const CustomLogo = memo<LobeChatProps>(({ extra, size = 32, className, style, ty
   let logoComponent: ReactNode;
 
   switch (type) {
-    case '3d':
-    case 'flat': {
-      logoComponent = <CustomImageLogo size={size} style={style} {...rest} />;
-      break;
-    }
-    case 'mono': {
-      logoComponent = (
-        <CustomImageLogo size={size} style={{ filter: 'grayscale(100%)', ...style }} {...rest} />
-      );
-      break;
-    }
     case 'text': {
       logoComponent = <CustomTextLogo size={size} style={style} {...rest} />;
       break;

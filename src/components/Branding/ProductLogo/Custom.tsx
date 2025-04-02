@@ -36,15 +36,16 @@ const CustomTextLogo = memo<FlexboxProps & { size: number }>(({ size, style, ...
 const CustomImageLogo = memo<Omit<ImageProps, 'alt' | 'src'> & { size: number }>(
   ({ size, ...rest }) => {
     return (
-      <Image
-        alt={BRANDING_NAME}
-        height={size}
-        src={BRANDING_LOGO_URL}
-        style={{ objectFit: 'contain' }}
-        unoptimized={true}
-        width={size * 3}
-        {...rest}
-      />
+      <div style={{ height: size, display: 'flex', alignItems: 'center' }}>
+        <Image
+          alt={BRANDING_NAME}
+          height={size}
+          src={BRANDING_LOGO_URL}
+          style={{ objectFit: 'contain', maxHeight: '100%', width: 'auto' }}
+          unoptimized={true}
+          {...rest}
+        />
+      </div>
     );
   },
 );

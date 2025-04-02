@@ -113,17 +113,6 @@ const Preview = memo(() => {
                 zIndex: 2,
               }}
             />
-            <Center
-              className={styles.avatar}
-              height={48}
-              style={{
-                borderRadius: '50%',
-                zIndex: 1,
-              }}
-              width={48}
-            >
-              <ProductLogo size={40} />
-            </Center>
           </Flexbox>
           <Flexbox gap={12} paddingBlock={12} width={'100%'}>
             <AiHeatmaps

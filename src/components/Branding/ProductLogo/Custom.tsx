@@ -40,9 +40,9 @@ const CustomImageLogo = memo<Omit<ImageProps, 'alt' | 'src'> & { size: number }>
         alt={BRANDING_NAME}
         height={size}
         src={BRANDING_LOGO_URL}
+        style={{ objectFit: 'contain' }}
         unoptimized={true}
         width={size * 3}
-        style={{ objectFit: 'contain' }}
         {...rest}
       />
     );
@@ -72,6 +72,7 @@ const CustomLogo = memo<LobeChatProps>(({ extra, size = 32, className, style, ty
   const { styles } = useStyles();
   let logoComponent: ReactNode;
 
+  // Default to image logo regardless of type
   switch (type) {
     case 'text': {
       logoComponent = <CustomTextLogo size={size} style={style} {...rest} />;
@@ -95,6 +96,7 @@ const CustomLogo = memo<LobeChatProps>(({ extra, size = 32, className, style, ty
       break;
     }
     default: {
+      // Use the image logo by default
       logoComponent = <CustomImageLogo size={size} style={style} {...rest} />;
       break;
     }

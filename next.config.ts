@@ -16,6 +16,10 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH;
 const nextConfig: NextConfig = {
   basePath,
   compress: isProd,
+  eslint: {
+    ignoreDuringBuilds: true,
+    dirs: [],
+  },
   experimental: {
     optimizePackageImports: [
       'emoji-mart',

@@ -1,7 +1,5 @@
 import pkg from '@/../package.json';
 
-import { BRANDING_NAME, ORG_NAME } from './branding';
-
 export const CURRENT_VERSION = pkg.version;
 
 export const isServerMode = process.env.NEXT_PUBLIC_SERVICE_MODE === 'server';

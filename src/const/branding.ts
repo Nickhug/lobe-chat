@@ -18,3 +18,5 @@ export const BRANDING_URL = {
   privacy: undefined,
   terms: undefined,
 };
+
+// Updated branding configuration

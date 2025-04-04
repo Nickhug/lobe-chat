@@ -10,6 +10,7 @@ import {
   Mic2,
   Settings2,
   Sparkles,
+  BarChart2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -124,6 +125,15 @@ export const useCategory = () => {
           label: (
             <Link href={'/settings/storage'} onClick={(e) => e.preventDefault()}>
               {t('tab.storage')}
+            </Link>
+          ),
+        },
+        {
+          icon: <Icon icon={BarChart2} />,
+          key: 'usage',
+          label: (
+            <Link href={'/settings/usage'} onClick={(e) => e.preventDefault()}>
+              {t('tab.usage', 'Usage')}
             </Link>
           ),
         },

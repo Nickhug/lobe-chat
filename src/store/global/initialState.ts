@@ -34,6 +34,7 @@ export enum SettingsTabs {
   Sync = 'sync',
   SystemAgent = 'system-agent',
   TTS = 'tts',
+  Usage = 'usage',
 }
 
 export enum ProfileTabs {

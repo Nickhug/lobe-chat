@@ -1,5 +1,5 @@
 import { Tag } from 'antd';
-import { Bot, Brain, Cloudy, Info, Mic2, Settings2, Sparkles } from 'lucide-react';
+import { Bot, Brain, Cloudy, Info, Mic2, Settings2, Sparkles, BarChart2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Flexbox } from 'react-layout-kit';
@@ -55,6 +55,11 @@ export const useCategory = () => {
       icon: Bot,
       key: SettingsTabs.Agent,
       label: t('tab.agent'),
+    },
+    {
+      icon: BarChart2,
+      key: SettingsTabs.Usage,
+      label: t('tab.usage', 'Usage'),
     },
     {
       icon: Info,

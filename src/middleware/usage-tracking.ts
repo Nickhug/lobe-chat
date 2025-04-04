@@ -1,40 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-// Define log directory
-const LOGS_DIR = process.env.USAGE_LOGS_DIR || path.join(process.cwd(), 'data', 'usage-logs');
-
-// Make sure log directory exists
-function ensureLogDir() {
-  try {
-    if (!fs.existsSync(LOGS_DIR)) {
-      fs.mkdirSync(LOGS_DIR, { recursive: true });
-    }
-  } catch (error) {
-    console.error('Failed to create logs directory:', error);
-  }
-}
-
-// Initialize directory
-ensureLogDir();
-
-// Function to append log entry
-export function appendLog(userId: string, data: any) {
-  try {
-    const date = new Date();
-    const filePath = path.join(LOGS_DIR, `${userId}_${date.getFullYear()}-${date.getMonth() + 1}.jsonl`);
-    const logEntry = {
-      ...data,
-      timestamp: date.toISOString()
-    };
-    
-    fs.appendFileSync(filePath, JSON.stringify(logEntry) + '\n', 'utf-8');
-  } catch (error) {
-    console.error('Failed to write usage log:', error);
-  }
-}
+import { appendLog } from '@/utils/logger/usageLogger';
 
 // Middleware function to track API usage
 export async function trackApiUsage(request: NextRequest) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { appendLog } from '@/utils/logger/usageLogger';
 
 // Define interface for the tool_calls
 interface ToolCall {
@@ -32,12 +33,8 @@ export async function POST(req: NextRequest) {
       stream: !!requestBody.stream
     };
     
-    // Log prompt data via API call
-    fetch('/api/usage/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(promptData)
-    }).catch(e => console.error('Failed to log prompt data:', e));
+    // Log prompt data directly with appendLog
+    await appendLog(userId, promptData);
     
     // Mock response for testing - replace with actual LLM call
     const response = {
@@ -54,7 +51,7 @@ export async function POST(req: NextRequest) {
           content: "This is a mock response for testing the usage tracking system."
         }
       }],
-      tool_calls: []
+      tool_calls: [] as ToolCall[]
     };
     
     // Log the completion data
@@ -70,12 +67,8 @@ export async function POST(req: NextRequest) {
       outputTokens: response.usage.completion_tokens
     };
     
-    // Log completion data via API call
-    fetch('/api/usage/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(completionData)
-    }).catch(e => console.error('Failed to log completion data:', e));
+    // Log completion data directly with appendLog
+    await appendLog(userId, completionData);
     
     // Return the response
     return NextResponse.json(response);

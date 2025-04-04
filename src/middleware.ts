@@ -12,6 +12,7 @@ import { Locales } from '@/locales/resources';
 import { parseBrowserLanguage } from '@/utils/locale';
 import { parseDefaultThemeFromCountry } from '@/utils/server/geo';
 import { RouteVariants } from '@/utils/server/routeVariants';
+import { trackApiUsage } from '@/middleware/usage-tracking';
 
 import { OAUTH_AUTHORIZED } from './const/auth';
 
@@ -41,10 +42,15 @@ export const config = {
   ],
 };
 
-const defaultMiddleware = (request: NextRequest) => {
+const defaultMiddleware = async (request: NextRequest) => {
   const url = new URL(request.url);
 
-  // skip all api requests
+  // Process API usage tracking for chat endpoints
+  if (url.pathname.startsWith('/api/chat') && request.method === 'POST') {
+    await trackApiUsage(request);
+  }
+
+  // skip other api requests
   if (['/api', '/trpc', '/webapi'].some((path) => url.pathname.startsWith(path))) {
     return NextResponse.next();
   }
@@ -94,8 +100,8 @@ const defaultMiddleware = (request: NextRequest) => {
 };
 
 // Initialize an Edge compatible NextAuth middleware
-const nextAuthMiddleware = NextAuthEdge.auth((req) => {
-  const response = defaultMiddleware(req);
+const nextAuthMiddleware = NextAuthEdge.auth(async (req) => {
+  const response = await defaultMiddleware(req);
 
   // Just check if session exists
   const session = req.auth;

@@ -9,8 +9,9 @@ export const BRANDING_NAME = '';
 export const BRANDING_DESCRIPTION = process.env.NEXT_PUBLIC_DESCRIPTION || '';
 export const BRANDING_TITLE_SUFFIX = process.env.NEXT_PUBLIC_TITLE_SUFFIX || '';
 export const BRANDING_CALL_TO_ACTION = process.env.NEXT_PUBLIC_CALL_TO_ACTION || '';
-export const BRANDING_LOGO_URL = '/images/logo/propert-logo.png';
-export const BRANDING_LOGO_WIDTH = 120;
+export const BRANDING_LOGO_URL = '/images/logo/propert-logo.png'; // This will remain as favicon
+export const BRANDING_HEADER_LOGO_URL = '/images/logo/header/propert-text-logo.png'; // This will be used in header
+export const BRANDING_LOGO_WIDTH = 180;
 export const BRANDING_LOGO_HEIGHT = 40;
 
 export const ORG_NAME = 'Propert';

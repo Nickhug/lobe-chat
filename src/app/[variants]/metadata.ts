@@ -2,6 +2,7 @@ import { appEnv } from '@/config/app';
 import {
   BRANDING_DESCRIPTION,
   BRANDING_LOGO_URL,
+  BRANDING_HEADER_LOGO_URL,
   BRANDING_NAME,
   BRANDING_TITLE_SUFFIX,
   ORG_NAME,
@@ -37,13 +38,11 @@ export const generateMetadata = async (props: DynamicLayoutProps) => {
       title: BRANDING_NAME,
     },
     description: customDescription,
-    icons: isCustomBranding
-      ? BRANDING_LOGO_URL
-      : {
-          apple: '/apple-touch-icon.png?v=1',
-          icon: '/favicon.ico?v=1',
-          shortcut: '/favicon-32x32.ico?v=1',
-        },
+    icons: {
+      apple: BRANDING_LOGO_URL,
+      icon: BRANDING_LOGO_URL,
+      shortcut: BRANDING_LOGO_URL,
+    },
     manifest: noManifest ? undefined : '/manifest.json',
     metadataBase: new URL(OFFICIAL_URL),
     openGraph: {

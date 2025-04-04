@@ -37,7 +37,7 @@ const Layout = memo<LayoutProps>(({ children, category }) => {
           getContainer={() => ref.current}
           title={
             <>
-              {t(`tab.${activeKey}`)}
+              {activeKey === 'usage' ? 'Usage Tracking' : t(`tab.${activeKey}` as any)}
               {activeKey === SettingsTabs.Sync && <Tag color={'gold'}>{t('tab.experiment')}</Tag>}
             </>
           }

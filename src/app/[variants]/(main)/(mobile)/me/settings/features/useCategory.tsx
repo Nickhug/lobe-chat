@@ -59,7 +59,7 @@ export const useCategory = () => {
     {
       icon: BarChart2,
       key: SettingsTabs.Usage,
-      label: t('tab.usage', 'Usage'),
+      label: 'Usage Tracking',
     },
     {
       icon: Info,

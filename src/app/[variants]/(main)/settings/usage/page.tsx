@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, DatePicker, Spin, Tabs, Statistic, Table, Typography } from 'antd';
 import { Flexbox } from 'react-layout-kit';
+import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/store/user';
 import { userProfileSelectors } from '@/store/user/selectors';
 import { formatNumber } from '@/utils/format';
@@ -49,6 +50,7 @@ interface UsageData {
 }
 
 export default function UsageDashboard() {
+  const { t } = useTranslation(['setting']);
   const userId = useUserStore(userProfileSelectors.userId);
   const [loading, setLoading] = useState(true);
   const [usageData, setUsageData] = useState<UsageData | null>(null);
@@ -94,7 +96,7 @@ export default function UsageDashboard() {
   if (!userId) {
     return (
       <Flexbox gap={24}>
-        <PageTitle title="Usage Dashboard" />
+        <PageTitle title="Usage Tracking" />
         <Typography.Paragraph>
           Please log in to view your usage statistics.
         </Typography.Paragraph>
@@ -104,7 +106,7 @@ export default function UsageDashboard() {
   
   return (
     <Flexbox gap={24}>
-      <PageTitle title="Usage Dashboard" />
+      <PageTitle title="Usage Tracking" />
       
       <Card>
         <Flexbox gap={16}>
@@ -140,24 +142,24 @@ export default function UsageDashboard() {
           items={[
             {
               key: 'models',
-              label: 'By Model',
+              label: "By Model",
               children: (
                 <Table 
                   dataSource={usageData.modelBreakdown || []} 
                   rowKey={(record: ModelUsage) => `${record.provider}-${record.model}`}
                   columns={[
                     {
-                      title: 'Model',
+                      title: "Model",
                       dataIndex: 'model',
                       key: 'model',
                     },
                     {
-                      title: 'Provider',
+                      title: "Provider",
                       dataIndex: 'provider',
                       key: 'provider',
                     },
                     {
-                      title: 'Total Tokens',
+                      title: "Total Tokens",
                       dataIndex: 'totalTokens',
                       key: 'totalTokens',
                       render: (tokens: number) => formatNumber(tokens),
@@ -165,7 +167,7 @@ export default function UsageDashboard() {
                       defaultSortOrder: 'descend',
                     },
                     {
-                      title: 'Messages',
+                      title: "Messages",
                       dataIndex: 'messageCount',
                       key: 'messageCount',
                     },
@@ -176,19 +178,19 @@ export default function UsageDashboard() {
             },
             {
               key: 'tools',
-              label: 'By Tool',
+              label: "By Tool",
               children: (
                 <Table 
                   dataSource={usageData.toolUsage || []} 
                   rowKey="name"
                   columns={[
                     {
-                      title: 'Tool',
+                      title: "Tool",
                       dataIndex: 'name',
                       key: 'name',
                     },
                     {
-                      title: 'Usage Count',
+                      title: "Usage Count",
                       dataIndex: 'count',
                       key: 'count',
                       sorter: (a: ToolUsage, b: ToolUsage) => a.count - b.count,
@@ -201,20 +203,20 @@ export default function UsageDashboard() {
             },
             {
               key: 'daily',
-              label: 'Daily Usage',
+              label: "Daily Usage",
               children: (
                 <Table 
                   dataSource={usageData.dailyUsage || []}
                   rowKey="date"  
                   columns={[
                     {
-                      title: 'Date',
+                      title: "Date",
                       dataIndex: 'date',
                       key: 'date',
                       render: (date: string) => new Date(date).toLocaleDateString(),
                     },
                     {
-                      title: 'Tokens',
+                      title: "Tokens",
                       dataIndex: 'tokens',
                       key: 'tokens',
                       render: (tokens: number) => formatNumber(tokens),
@@ -228,30 +230,30 @@ export default function UsageDashboard() {
             },
             {
               key: 'recent',
-              label: 'Recent Activity',
+              label: "Recent Activity",
               children: (
                 <Table 
                   dataSource={usageData.recentActivity || []}
                   rowKey="timestamp"  
                   columns={[
                     {
-                      title: 'Timestamp',
+                      title: "Timestamp",
                       dataIndex: 'timestamp',
                       key: 'timestamp',
                       render: (timestamp: string) => new Date(timestamp).toLocaleString(),
                     },
                     {
-                      title: 'Model',
+                      title: "Model",
                       dataIndex: 'model',
                       key: 'model',
                     },
                     {
-                      title: 'Provider',
+                      title: "Provider",
                       dataIndex: 'provider',
                       key: 'provider',
                     },
                     {
-                      title: 'Tokens',
+                      title: "Tokens",
                       dataIndex: 'tokens',
                       key: 'tokens',
                       render: (tokens: number) => formatNumber(tokens),

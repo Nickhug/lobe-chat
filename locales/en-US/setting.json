@@ -469,7 +469,8 @@
     "storage": "Data Storage",
     "sync": "Cloud Sync",
     "system-agent": "System Assistant",
-    "tts": "Text-to-Speech"
+    "tts": "Text-to-Speech",
+    "usage": "Usage Tracking"
   },
   "tools": {
     "builtins": {
@@ -477,11 +478,38 @@
     },
     "disabled": "The current model does not support function calls and cannot use the plugin",
     "plugins": {
-      "enabled": "Enabled: {{num}}",
+      "enabled": "Enabled {{num}}",
       "groupName": "Plugins",
       "noEnabled": "No plugins enabled",
       "store": "Plugin Store"
     },
     "title": "Extension Tools"
+  },
+  "usage": {
+    "loginRequired": "Please log in to view your usage statistics.",
+    "loading": "Loading usage data...",
+    "stats": {
+      "totalTokens": "Total Tokens",
+      "inputTokens": "Input Tokens",
+      "outputTokens": "Output Tokens",
+      "messages": "Messages"
+    },
+    "tabs": {
+      "byModel": "By Model",
+      "byTool": "By Tool",
+      "dailyUsage": "Daily Usage",
+      "recentActivity": "Recent Activity"
+    },
+    "columns": {
+      "model": "Model",
+      "provider": "Provider",
+      "totalTokens": "Total Tokens",
+      "messages": "Messages",
+      "tool": "Tool",
+      "usageCount": "Usage Count",
+      "date": "Date",
+      "tokens": "Tokens",
+      "timestamp": "Timestamp"
+    }
   }
 }

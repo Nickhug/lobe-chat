@@ -3,6 +3,7 @@
 
 import { Pool } from '@neondatabase/serverless';
 import { createPool } from '@vercel/postgres';
+import { getModelCostMultiplier } from '@/config/modelCost';
 
 // Debug connection info
 const DATABASE_URL = process.env.DATABASE_URL || '';
@@ -155,6 +156,29 @@ export async function appendLog(userId: string, data: any) {
         toolName
       } = data;
       
+      // Apply cost multiplier for token counts
+      let adjustedTotalTokens = totalTokens;
+      let adjustedInputTokens = inputTokens;
+      let adjustedOutputTokens = outputTokens;
+      
+      if ((type === 'completion' || type === 'prompt') && totalTokens && (model || provider)) {
+        const multiplier = getModelCostMultiplier(model, provider);
+        
+        if (multiplier !== 1.0) {
+          console.log(`[USAGE LOG] Applying cost multiplier: ${multiplier}x for ${model || provider}`);
+          
+          adjustedTotalTokens = Math.round(totalTokens * multiplier);
+          
+          if (inputTokens) {
+            adjustedInputTokens = Math.round(inputTokens * multiplier);
+          }
+          
+          if (outputTokens) {
+            adjustedOutputTokens = Math.round(outputTokens * multiplier);
+          }
+        }
+      }
+      
       // Simple direct log first - helpful for debugging
       console.log(JSON.stringify({
         log_type: 'usage_log',
@@ -163,7 +187,8 @@ export async function appendLog(userId: string, data: any) {
         model,
         provider,
         timestamp: timestamp.toISOString(),
-        total_tokens: totalTokens
+        tokens: adjustedTotalTokens,
+        multiplier: adjustedTotalTokens !== totalTokens ? (adjustedTotalTokens / totalTokens).toFixed(1) : '1.0'
       }));
       
       // Insert into database with timeout
@@ -182,11 +207,17 @@ export async function appendLog(userId: string, data: any) {
             messageId || null,
             sessionId || null,
             promptLength || null,
-            totalTokens || null,
-            inputTokens || null,
-            outputTokens || null,
+            adjustedTotalTokens || null,
+            adjustedInputTokens || null,
+            adjustedOutputTokens || null,
             toolName || null,
-            JSON.stringify(data)
+            JSON.stringify({
+              ...data,
+              // Add adjusted token information to data for reference
+              rawTotalTokens: totalTokens !== adjustedTotalTokens ? totalTokens : undefined,
+              costMultiplier: adjustedTotalTokens !== totalTokens ? 
+                (adjustedTotalTokens / totalTokens) : undefined
+            })
           ]
         ),
         new Promise((_, reject) => 

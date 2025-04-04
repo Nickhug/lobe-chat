@@ -5,8 +5,6 @@ import { createPool } from '@vercel/postgres';
 // Define row types
 interface SummaryRow {
   total_tokens: string;
-  input_tokens: string;
-  output_tokens: string;
   total_messages: string;
 }
 
@@ -48,8 +46,6 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     // Initialize response structure
     const summary = {
       totalTokens: 0,
-      inputTokens: 0,
-      outputTokens: 0,
       totalMessages: 0
     };
     
@@ -75,8 +71,6 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     const summaryResult = await pool.query(`
       SELECT 
         SUM(total_tokens) as total_tokens,
-        SUM(input_tokens) as input_tokens, 
-        SUM(output_tokens) as output_tokens,
         COUNT(*) as total_messages
       FROM usage_logs 
       WHERE user_id = $1 AND type = 'completion'${timeQuery}
@@ -87,8 +81,6 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     if (summaryResult.rows.length > 0) {
       const row = summaryResult.rows[0] as SummaryRow;
       summary.totalTokens = parseInt(row.total_tokens) || 0;
-      summary.inputTokens = parseInt(row.input_tokens) || 0;
-      summary.outputTokens = parseInt(row.output_tokens) || 0;
       summary.totalMessages = parseInt(row.total_messages) || 0;
     }
     
@@ -121,12 +113,16 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     
     console.log(`[STATS API] Model breakdown rows: ${modelBreakdownResult.rows.length}`);
     
-    const modelBreakdown = modelBreakdownResult.rows.map((row: ModelBreakdownRow) => ({
-      provider: row.provider,
-      model: row.model,
-      totalTokens: parseInt(row.total_tokens) || 0,
-      messageCount: parseInt(row.message_count) || 0
-    }));
+    const modelBreakdown = modelBreakdownResult.rows.map((row: ModelBreakdownRow) => {
+      const totalTokens = parseInt(row.total_tokens) || 0;
+      
+      return {
+        provider: row.provider,
+        model: row.model,
+        totalTokens,
+        messageCount: parseInt(row.message_count) || 0
+      };
+    });
     
     console.log(`[STATS API] Executing tool usage query`);
     
@@ -186,14 +182,18 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     
     console.log(`[STATS API] Recent activity rows: ${recentActivityResult.rows.length}`);
     
-    const recentActivity = recentActivityResult.rows.map((row: RecentActivityRow) => ({
-      timestamp: row.timestamp.toISOString(),
-      model: row.model,
-      provider: row.provider,
-      type: row.type,
-      toolName: row.tool_name,
-      tokens: parseInt(row.tokens) || 0
-    }));
+    const recentActivity = recentActivityResult.rows.map((row: RecentActivityRow) => {
+      const tokens = parseInt(row.tokens) || 0;
+      
+      return {
+        timestamp: row.timestamp.toISOString(),
+        model: row.model,
+        provider: row.provider,
+        type: row.type,
+        toolName: row.tool_name,
+        tokens
+      };
+    });
     
     const result = {
       summary,
@@ -209,7 +209,10 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     console.error('[STATS API] Error processing usage stats:', error);
     // Return empty data if database query fails
     return {
-      summary: { totalTokens: 0, inputTokens: 0, outputTokens: 0, totalMessages: 0 },
+      summary: { 
+        totalTokens: 0,
+        totalMessages: 0
+      },
       modelBreakdown: [],
       toolUsage: [],
       dailyUsage: [],

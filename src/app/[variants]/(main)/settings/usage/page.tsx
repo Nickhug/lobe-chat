@@ -12,8 +12,6 @@ import PageTitle from '@/components/PageTitle';
 // Define types for the usage data
 interface UsageSummary {
   totalTokens: number;
-  inputTokens: number;
-  outputTokens: number;
   totalMessages: number;
 }
 
@@ -128,16 +126,8 @@ export default function UsageDashboard() {
           ) : (
             <Flexbox horizontal gap={48} align="center">
               <Statistic 
-                title="Total Tokens" 
+                title="Total Tokens"
                 value={formatNumber(usageData?.summary?.totalTokens || 0)} 
-              />
-              <Statistic 
-                title="Input Tokens" 
-                value={formatNumber(usageData?.summary?.inputTokens || 0)} 
-              />
-              <Statistic 
-                title="Output Tokens" 
-                value={formatNumber(usageData?.summary?.outputTokens || 0)} 
               />
               <Statistic 
                 title="Messages" 
@@ -170,7 +160,7 @@ export default function UsageDashboard() {
                       key: 'provider',
                     },
                     {
-                      title: "Total Tokens",
+                      title: "Tokens",
                       dataIndex: 'totalTokens',
                       key: 'totalTokens',
                       render: (tokens: number) => formatNumber(tokens),
@@ -274,7 +264,8 @@ export default function UsageDashboard() {
                       title: "Tokens",
                       dataIndex: 'tokens',
                       key: 'tokens',
-                      render: (tokens: number) => formatNumber(tokens),
+                      render: (tokens: number, record: ActivityEntry) => 
+                        record.type === 'completion' ? formatNumber(tokens) : '-',
                     },
                   ]}
                   pagination={false}

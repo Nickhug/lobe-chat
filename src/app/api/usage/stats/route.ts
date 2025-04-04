@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from '@neondatabase/serverless';
 import { createPool } from '@vercel/postgres';
-import { getUserSubscription, calculateUserTokenLimit, calculateUserToolCallLimit } from '@/config/subscriptionPlans';
+import { getUserSubscription, getUserTokenLimit, getUserToolCallLimit } from '@/config/subscriptionPlans';
 
 // Define row types
 interface SummaryRow {
@@ -46,8 +46,8 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
   try {
     // Get user subscription data
     const subscription = await getUserSubscription(userId);
-    const tokenLimit = calculateUserTokenLimit(subscription);
-    const toolCallLimit = calculateUserToolCallLimit(subscription);
+    const tokenLimit = getUserTokenLimit(subscription.plan, subscription.extraTokens);
+    const toolCallLimit = getUserToolCallLimit(subscription.plan, subscription.extraToolCalls);
     
     // Initialize response structure
     const summary = {
@@ -238,8 +238,8 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
         subscription: {
           plan: 'free',
           expiresAt: new Date().toISOString(),
-          tokenLimit: 100000,
-          toolCallLimit: 50,
+          tokenLimit: 500000, // Default free tier limit
+          toolCallLimit: 50,   // Default free tier limit
           extraTokens: 0,
           extraToolCalls: 0,
           tokenUsagePercentage: 0,
@@ -263,8 +263,9 @@ export async function GET(req: NextRequest) {
     let userId = searchParams.get('userId');
     if (!userId) {
       const headerUserId = req.headers.get('x-user-id');
+      const authUserId = req.headers.get('x-auth-user-id');
       const cookieUserId = req.cookies.get('user_id')?.value || null;
-      userId = headerUserId || cookieUserId;
+      userId = headerUserId || authUserId || cookieUserId;
     }
     
     console.log(`[STATS API] Getting stats for user ID: ${userId || 'not provided'}`);
@@ -305,4 +306,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

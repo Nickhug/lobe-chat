@@ -13,127 +13,182 @@ export interface SubscriptionPlan {
   description: string;
   monthlyTokenLimit: number;
   toolCallLimit: number;
+  extraTokenPrice: number;
+  extraToolCallPrice: number;
   price: {
     monthly: number;
     yearly: number;
   };
   features: string[];
-  extraTokenPrice: number; // Price per 1000 additional tokens
-  extraToolCallPrice: number; // Price per additional tool call
 }
 
 // Default plans configuration
 export const subscriptionPlans: Record<PlanType, SubscriptionPlan> = {
   [PlanType.Free]: {
     id: PlanType.Free,
-    name: 'Free',
-    description: 'Limited access for personal use',
-    monthlyTokenLimit: 100000, // 100k tokens per month
-    toolCallLimit: 50, // 50 tool calls per month
+    name: 'Free Plan',
+    description: 'Get started with basic access to AI assistants',
+    monthlyTokenLimit: 500000, // 500K tokens
+    toolCallLimit: 50,
+    extraTokenPrice: 0.002, // $2 per 1000 tokens
+    extraToolCallPrice: 0.1, // $0.10 per tool call
     price: {
       monthly: 0,
       yearly: 0,
     },
     features: [
       'Access to basic models',
-      'Limited to 100k tokens/month',
-      '50 tool calls per month',
-      'No priority support',
+      'Limited monthly tokens',
+      'Limited tool calls',
+      'Standard response times',
     ],
-    extraTokenPrice: 0, // Free users can't purchase extra tokens
-    extraToolCallPrice: 0, // Free users can't purchase extra tool calls
   },
   [PlanType.Basic]: {
     id: PlanType.Basic,
-    name: 'Basic',
-    description: 'Perfect for casual users',
-    monthlyTokenLimit: 500000, // 500k tokens per month
-    toolCallLimit: 200, // 200 tool calls per month
+    name: 'Basic Plan',
+    description: 'Ideal for personal or light professional use',
+    monthlyTokenLimit: 2000000, // 2M tokens
+    toolCallLimit: 300,
+    extraTokenPrice: 0.0015, // $1.50 per 1000 tokens
+    extraToolCallPrice: 0.08, // $0.08 per tool call
     price: {
       monthly: 9.99,
-      yearly: 99.99,
+      yearly: 99.90,
     },
     features: [
-      'Access to all available models',
-      '500k tokens per month',
-      '200 tool calls per month',
-      'Email support',
-      'Ability to purchase extra tokens',
+      'All Free features',
+      'Access to standard models',
+      'Increased token limit',
+      'More tool calls',
+      'Priority response times',
     ],
-    extraTokenPrice: 2.99, // $2.99 per 1000 extra tokens
-    extraToolCallPrice: 0.10, // $0.10 per extra tool call
   },
   [PlanType.Pro]: {
     id: PlanType.Pro,
-    name: 'Pro',
-    description: 'For professionals and power users',
-    monthlyTokenLimit: 2000000, // 2M tokens per month
-    toolCallLimit: 1000, // 1000 tool calls per month
+    name: 'Pro Plan',
+    description: 'For power users and professionals',
+    monthlyTokenLimit: 5000000, // 5M tokens
+    toolCallLimit: 1000,
+    extraTokenPrice: 0.001, // $1 per 1000 tokens
+    extraToolCallPrice: 0.05, // $0.05 per tool call
     price: {
-      monthly: 29.99,
-      yearly: 299.99,
+      monthly: 19.99,
+      yearly: 199.90,
     },
     features: [
-      'Priority access to all models',
-      '2M tokens per month',
-      '1000 tool calls per month',
-      'Priority support',
-      'Discounted extra tokens',
-      'API access',
+      'All Basic features',
+      'Access to advanced models',
+      'High token limit',
+      'Extensive tool calls',
+      'Faster response times',
+      'Early access to new features',
     ],
-    extraTokenPrice: 1.99, // $1.99 per 1000 extra tokens
-    extraToolCallPrice: 0.05, // $0.05 per extra tool call
   },
   [PlanType.Enterprise]: {
     id: PlanType.Enterprise,
-    name: 'Enterprise',
-    description: 'Custom solution for teams and organizations',
-    monthlyTokenLimit: 10000000, // 10M tokens per month
-    toolCallLimit: 5000, // 5000 tool calls per month
+    name: 'Enterprise Plan',
+    description: 'Custom solutions for teams and organizations',
+    monthlyTokenLimit: 20000000, // 20M tokens
+    toolCallLimit: 5000,
+    extraTokenPrice: 0.0008, // $0.80 per 1000 tokens
+    extraToolCallPrice: 0.03, // $0.03 per tool call
     price: {
-      monthly: 99.99,
-      yearly: 999.99,
+      monthly: 49.99,
+      yearly: 499.90,
     },
     features: [
-      'Unlimited access to all models',
-      '10M tokens per month',
-      '5000 tool calls per month',
+      'All Pro features',
+      'Access to all models',
+      'Custom token limit',
+      'Unlimited tool calls',
       'Dedicated support',
-      'Heavily discounted extra tokens',
-      'Advanced API access',
-      'Custom integrations',
+      'Custom feature development',
+      'Team management',
     ],
-    extraTokenPrice: 0.99, // $0.99 per 1000 extra tokens
-    extraToolCallPrice: 0.02, // $0.02 per extra tool call
   },
 };
 
+import { Pool } from '@neondatabase/serverless';
+import { createPool } from '@vercel/postgres';
+
+// Initialize database connection
+const pool = process.env.POSTGRES_URL 
+  ? createPool({ connectionString: process.env.POSTGRES_URL })
+  : new Pool({ connectionString: process.env.DATABASE_URL });
+
+// Define the user subscription interface
 export interface UserSubscription {
   plan: PlanType;
   expiresAt: Date;
-  extraTokens: number; // Additional purchased tokens
-  extraToolCalls: number; // Additional purchased tool calls
+  extraTokens: number;
+  extraToolCalls: number;
 }
 
-// Mock function to get user subscription - to be replaced with actual implementation
+// Function to get user subscription data from the database
 export const getUserSubscription = async (userId: string): Promise<UserSubscription> => {
-  // This would typically fetch from your database
-  return {
-    plan: PlanType.Basic, // Default to Basic for testing
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    extraTokens: 5000, // 5000 additional tokens
-    extraToolCalls: 20, // 20 additional tool calls
-  };
+  try {
+    console.log(`[SUBSCRIPTION] Getting subscription data for user: ${userId}`);
+    
+    // Query the users table for subscription information
+    const result = await pool.query(`
+      SELECT subscription_tier, xtra_token, xtra_tool
+      FROM users
+      WHERE id = $1
+    `, [userId]);
+    
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      const plan = user.subscription_tier as PlanType || PlanType.Free;
+      
+      // Set expiration date to end of current month by default
+      const now = new Date();
+      const expiresAt = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
+      
+      return {
+        plan,
+        expiresAt,
+        extraTokens: user.xtra_token || 0,
+        extraToolCalls: user.xtra_tool || 0,
+      };
+    }
+    
+    // Return default free subscription if user not found
+    console.log(`[SUBSCRIPTION] User not found, returning default Free subscription`);
+    const now = new Date();
+    const expiresAt = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    return {
+      plan: PlanType.Free,
+      expiresAt,
+      extraTokens: 0,
+      extraToolCalls: 0,
+    };
+  } catch (error) {
+    console.error('[SUBSCRIPTION] Error fetching user subscription data:', error);
+    
+    // Return default free subscription on error
+    const now = new Date();
+    const expiresAt = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    return {
+      plan: PlanType.Free,
+      expiresAt,
+      extraTokens: 0,
+      extraToolCalls: 0,
+    };
+  }
 };
 
-// Calculate total available tokens for a user (plan limit + extra purchased tokens)
-export const calculateUserTokenLimit = (subscription: UserSubscription): number => {
-  const plan = subscriptionPlans[subscription.plan];
-  return plan.monthlyTokenLimit + subscription.extraTokens;
+// Helper function to get total available tokens for a user
+export const getUserTokenLimit = (tierName: string, extraTokens: number = 0) => {
+  const tier = tierName as PlanType;
+  if (!subscriptionPlans[tier]) return subscriptionPlans[PlanType.Free].monthlyTokenLimit + extraTokens;
+  return subscriptionPlans[tier].monthlyTokenLimit + extraTokens;
 };
 
-// Calculate total available tool calls for a user (plan limit + extra purchased calls)
-export const calculateUserToolCallLimit = (subscription: UserSubscription): number => {
-  const plan = subscriptionPlans[subscription.plan];
-  return plan.toolCallLimit + subscription.extraToolCalls;
+// Helper function to get total available tool calls for a user
+export const getUserToolCallLimit = (tierName: string, extraToolCalls: number = 0) => {
+  const tier = tierName as PlanType;
+  if (!subscriptionPlans[tier]) return subscriptionPlans[PlanType.Free].toolCallLimit + extraToolCalls;
+  return subscriptionPlans[tier].toolCallLimit + extraToolCalls;
 }; 

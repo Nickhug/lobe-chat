@@ -268,6 +268,37 @@ export const chatPlugin: StateCreator<
       const id = await get().internal_createMessage(toolMessage);
       if (!id) return;
 
+      // Log tool usage to the usage tracking system
+      try {
+        const userId = get().activeId || 'anonymous';
+        const usageData = {
+          type: 'tool',
+          userId,
+          messageId: id,
+          sessionId: get().activeId,
+          toolName: `${payload.identifier}:${payload.apiName}`,
+          model: (message as any)?.model,
+          provider: (message as any)?.provider,
+          data: {
+            toolType: payload.type,
+            identifier: payload.identifier,
+            apiName: payload.apiName
+          }
+        };
+
+        // Non-blocking call to log tool usage
+        console.log('[PLUGIN] Logging tool usage:', usageData);
+        fetch('/api/usage/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(usageData),
+        }).catch(error => {
+          console.error('[PLUGIN] Error logging tool usage:', error);
+        });
+      } catch (error) {
+        console.error('[PLUGIN] Failed to prepare tool usage data:', error);
+      }
+
       // trigger the plugin call
       const data = await get().internal_invokeDifferentTypePlugin(id, payload);
 

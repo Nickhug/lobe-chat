@@ -39,6 +39,8 @@ interface ActivityEntry {
   model: string;
   provider: string;
   tokens: number;
+  type: string;
+  toolName?: string;
 }
 
 interface UsageData {
@@ -243,9 +245,16 @@ export default function UsageDashboard() {
                       render: (timestamp: string) => new Date(timestamp).toLocaleString(),
                     },
                     {
-                      title: "Model",
-                      dataIndex: 'model',
-                      key: 'model',
+                      title: "Type",
+                      dataIndex: 'type',
+                      key: 'type',
+                      render: (type: string) => type === 'completion' ? 'AI Response' : 'Tool Call',
+                    },
+                    {
+                      title: "Model/Tool",
+                      key: 'modelOrTool',
+                      render: (_, record: ActivityEntry) => 
+                        record.type === 'tool' ? record.toolName : record.model,
                     },
                     {
                       title: "Provider",

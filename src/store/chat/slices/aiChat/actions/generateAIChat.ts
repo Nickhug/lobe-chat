@@ -572,6 +572,36 @@ export const generateAIChat: StateCreator<
         content,
         { traceId, observationId, toolCalls, reasoning, grounding, usage },
       ) => {
+        // Log usage data if available
+        if (usage && usage.totalTokens) {
+          try {
+            // Create usage data object for logging
+            const usageData = {
+              type: 'completion',
+              model,
+              provider,
+              userId: get().activeId || 'anonymous',
+              messageId,
+              sessionId: get().activeId,
+              totalTokens: usage.totalTokens,
+              inputTokens: usage.totalInputTokens || 0,
+              outputTokens: usage.totalOutputTokens || 0
+            };
+            
+            // Call the API to log usage data (non-blocking)
+            console.log('[CHAT] Logging completion usage data:', usageData);
+            fetch('/api/usage/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(usageData),
+            }).catch(error => {
+              console.error('[CHAT] Error logging usage data:', error);
+            });
+          } catch (error) {
+            console.error('[CHAT] Failed to prepare usage data:', error);
+          }
+        }
+
         // if there is traceId, update it
         if (traceId) {
           msgTraceId = traceId;

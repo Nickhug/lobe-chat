@@ -31,6 +31,8 @@ interface RecentActivityRow {
   timestamp: Date;
   model: string;
   provider: string;
+  type: string;
+  tool_name: string;
   tokens: string;
 }
 
@@ -90,6 +92,18 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       summary.totalMessages = parseInt(row.total_messages) || 0;
     }
     
+    // Also count tool messages for total message count
+    const toolMessageCountResult = await pool.query(`
+      SELECT COUNT(*) as tool_message_count
+      FROM usage_logs 
+      WHERE user_id = $1 AND type = 'tool'${timeQuery}
+    `, params);
+    
+    if (toolMessageCountResult.rows.length > 0) {
+      const toolCount = parseInt(toolMessageCountResult.rows[0].tool_message_count) || 0;
+      summary.totalMessages += toolCount;
+    }
+    
     console.log(`[STATS API] Summary stats: ${JSON.stringify(summary)}`);
     console.log(`[STATS API] Executing model breakdown query`);
     
@@ -141,7 +155,7 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
         DATE_TRUNC('day', timestamp) as date,
         SUM(total_tokens) as tokens
       FROM usage_logs 
-      WHERE user_id = $1 AND type = 'completion'${timeQuery}
+      WHERE user_id = $1 AND total_tokens IS NOT NULL${timeQuery}
       GROUP BY DATE_TRUNC('day', timestamp)
       ORDER BY date DESC
     `, params);
@@ -161,9 +175,11 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
         timestamp,
         model,
         provider,
+        type,
+        tool_name,
         total_tokens as tokens
       FROM usage_logs 
-      WHERE user_id = $1 AND type = 'completion'${timeQuery}
+      WHERE user_id = $1 AND (type = 'completion' OR type = 'tool')${timeQuery}
       ORDER BY timestamp DESC
       LIMIT 10
     `, params);
@@ -174,6 +190,8 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       timestamp: row.timestamp.toISOString(),
       model: row.model,
       provider: row.provider,
+      type: row.type,
+      toolName: row.tool_name,
       tokens: parseInt(row.tokens) || 0
     }));
     

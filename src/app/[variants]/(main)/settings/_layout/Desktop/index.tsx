@@ -37,7 +37,29 @@ const Layout = memo<LayoutProps>(({ children, category }) => {
           getContainer={() => ref.current}
           title={
             <>
-              {activeKey === 'usage' ? 'Usage Tracking' : t(`tab.${activeKey}` as any)}
+              {activeKey === 'usage' 
+                ? 'Usage Tracking' 
+                : activeKey === SettingsTabs.Provider 
+                  ? t('tab.provider')
+                  : activeKey === SettingsTabs.TTS
+                    ? t('tab.tts')
+                    : activeKey === SettingsTabs.About
+                      ? t('tab.about')
+                      : activeKey === SettingsTabs.Agent
+                        ? t('tab.agent')
+                        : activeKey === SettingsTabs.Hotkey
+                          ? t('tab.hotkey')
+                          : activeKey === SettingsTabs.Common
+                            ? t('tab.common')
+                            : activeKey === SettingsTabs.Sync
+                              ? t('tab.sync')
+                              : activeKey === SettingsTabs.LLM
+                                ? t('tab.llm')
+                                : activeKey === SettingsTabs.Storage
+                                  ? t('tab.storage') 
+                                  : activeKey === SettingsTabs.SystemAgent
+                                    ? t('tab.system-agent')
+                                    : String(activeKey)}
               {activeKey === SettingsTabs.Sync && <Tag color={'gold'}>{t('tab.experiment')}</Tag>}
             </>
           }

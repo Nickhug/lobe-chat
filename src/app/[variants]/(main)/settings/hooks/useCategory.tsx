@@ -133,7 +133,7 @@ export const useCategory = () => {
           key: 'usage',
           label: (
             <Link href={'/settings/usage'} onClick={(e) => e.preventDefault()}>
-              {t('tab.usage')}
+              {t('tab.usage' as any)}
             </Link>
           ),
         },

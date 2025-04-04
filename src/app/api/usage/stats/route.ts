@@ -1,31 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'node:fs';
-import path from 'node:path';
-import readline from 'node:readline';
-import { promises as fsPromises } from 'node:fs';
+import { Pool } from '@neondatabase/serverless';
+import { createPool } from '@vercel/postgres';
 
-// Define log directory
-const LOGS_DIR = process.env.USAGE_LOGS_DIR || path.join(process.cwd(), 'data', 'usage-logs');
+// Define row types
+interface SummaryRow {
+  total_tokens: string;
+  input_tokens: string;
+  output_tokens: string;
+  total_messages: string;
+}
 
-// Function to read and process log files
-async function processLogs(userId: string, startDate?: Date, endDate?: Date) {
+interface ModelBreakdownRow {
+  provider: string;
+  model: string;
+  total_tokens: string;
+  message_count: string;
+}
+
+interface ToolUsageRow {
+  name: string;
+  count: string;
+}
+
+interface DailyUsageRow {
+  date: Date;
+  tokens: string;
+}
+
+interface RecentActivityRow {
+  timestamp: Date;
+  model: string;
+  provider: string;
+  total_tokens: string;
+}
+
+// Initialize database connection
+const pool = process.env.POSTGRES_URL 
+  ? createPool({ connectionString: process.env.POSTGRES_URL })
+  : new Pool({ connectionString: process.env.DATABASE_URL });
+
+// Function to get usage statistics from Neon DB
+async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
   try {
-    // Get all log files for this user
-    if (!fs.existsSync(LOGS_DIR)) {
-      await fsPromises.mkdir(LOGS_DIR, { recursive: true });
-      return {
-        summary: { totalTokens: 0, inputTokens: 0, outputTokens: 0, totalMessages: 0 },
-        modelBreakdown: [],
-        toolUsage: [],
-        dailyUsage: [],
-        recentActivity: []
-      };
-    }
-
-    const files = await fsPromises.readdir(LOGS_DIR);
-    const userFiles = files.filter(file => file.startsWith(userId + '_'));
-    
-    // Initialize accumulators
+    // Initialize response structure
     const summary = {
       totalTokens: 0,
       inputTokens: 0,
@@ -33,93 +50,126 @@ async function processLogs(userId: string, startDate?: Date, endDate?: Date) {
       totalMessages: 0
     };
     
-    const modelBreakdown: Record<string, any> = {};
-    const toolUsage: Record<string, number> = {};
-    const dailyUsage: Record<string, number> = {};
-    const recentActivity: any[] = [];
+    // Build the WHERE clause with parameters
+    const params: any[] = [userId];
+    let timeQuery = '';
     
-    // Process each log file
-    for (const file of userFiles) {
-      const filePath = path.join(LOGS_DIR, file);
-      const fileContent = await fsPromises.readFile(filePath, 'utf8');
-      const lines = fileContent.split('\n').filter(Boolean);
-      
-      // Process each log entry
-      for (const line of lines) {
-        try {
-          const entry = JSON.parse(line);
-          const entryDate = new Date(entry.timestamp);
-          
-          // Apply date filters if specified
-          if (startDate && entryDate < startDate) continue;
-          if (endDate && entryDate > endDate) continue;
-          
-          // Process completion entries
-          if (entry.type === 'completion') {
-            // Update summary stats
-            summary.totalTokens += entry.totalTokens || 0;
-            summary.inputTokens += entry.inputTokens || 0;
-            summary.outputTokens += entry.outputTokens || 0;
-            summary.totalMessages++;
-            
-            // Update model breakdown
-            const modelKey = `${entry.provider}:${entry.model}`;
-            if (!modelBreakdown[modelKey]) {
-              modelBreakdown[modelKey] = {
-                provider: entry.provider,
-                model: entry.model,
-                totalTokens: 0,
-                messageCount: 0
-              };
-            }
-            
-            modelBreakdown[modelKey].totalTokens += entry.totalTokens || 0;
-            modelBreakdown[modelKey].messageCount++;
-            
-            // Update daily usage
-            const dateKey = entryDate.toISOString().split('T')[0];
-            dailyUsage[dateKey] = (dailyUsage[dateKey] || 0) + (entry.totalTokens || 0);
-            
-            // Add to recent activity
-            recentActivity.push({
-              timestamp: entry.timestamp,
-              model: entry.model,
-              provider: entry.provider,
-              tokens: entry.totalTokens || 0
-            });
-          }
-          
-          // Process tool usage entries
-          if (entry.type === 'tool') {
-            const toolName = entry.toolName;
-            toolUsage[toolName] = (toolUsage[toolName] || 0) + 1;
-          }
-        } catch (error) {
-          console.error('Error processing log entry:', error);
-        }
-      }
+    if (startDate) {
+      timeQuery += ' AND timestamp >= $2';
+      params.push(startDate);
     }
     
-    // Sort recent activity by timestamp (newest first)
-    recentActivity.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    if (endDate) {
+      timeQuery += ` AND timestamp <= $${params.length + 1}`;
+      params.push(endDate);
+    }
     
-    // Limit to most recent 10 activities
-    const recentActivitiesLimited = recentActivity.slice(0, 10);
+    // Get summary stats for completions
+    const summaryResult = await pool.query(`
+      SELECT 
+        SUM(total_tokens) as total_tokens,
+        SUM(input_tokens) as input_tokens, 
+        SUM(output_tokens) as output_tokens,
+        COUNT(*) as total_messages
+      FROM usage_logs 
+      WHERE user_id = $1 AND type = 'completion'${timeQuery}
+    `, params);
     
-    // Convert record objects to arrays for the response
+    if (summaryResult.rows.length > 0) {
+      const row = summaryResult.rows[0] as SummaryRow;
+      summary.totalTokens = parseInt(row.total_tokens) || 0;
+      summary.inputTokens = parseInt(row.input_tokens) || 0;
+      summary.outputTokens = parseInt(row.output_tokens) || 0;
+      summary.totalMessages = parseInt(row.total_messages) || 0;
+    }
+    
+    // Get model breakdown
+    const modelBreakdownResult = await pool.query(`
+      SELECT 
+        provider,
+        model,
+        SUM(total_tokens) as total_tokens,
+        COUNT(*) as message_count
+      FROM usage_logs 
+      WHERE user_id = $1 AND type = 'completion'${timeQuery}
+      GROUP BY provider, model
+    `, params);
+    
+    const modelBreakdown = modelBreakdownResult.rows.map((row: ModelBreakdownRow) => ({
+      provider: row.provider,
+      model: row.model,
+      totalTokens: parseInt(row.total_tokens) || 0,
+      messageCount: parseInt(row.message_count) || 0
+    }));
+    
+    // Get tool usage
+    const toolUsageResult = await pool.query(`
+      SELECT 
+        tool_name as name,
+        COUNT(*) as count
+      FROM usage_logs 
+      WHERE user_id = $1 AND type = 'tool'${timeQuery}
+      GROUP BY tool_name
+    `, params);
+    
+    const toolUsage = toolUsageResult.rows.map((row: ToolUsageRow) => ({
+      name: row.name,
+      count: parseInt(row.count) || 0
+    }));
+    
+    // Get daily usage
+    const dailyUsageResult = await pool.query(`
+      SELECT 
+        DATE_TRUNC('day', timestamp) as date,
+        SUM(total_tokens) as tokens
+      FROM usage_logs 
+      WHERE user_id = $1 AND type = 'completion'${timeQuery}
+      GROUP BY DATE_TRUNC('day', timestamp)
+      ORDER BY date DESC
+    `, params);
+    
+    const dailyUsage = dailyUsageResult.rows.map((row: DailyUsageRow) => ({
+      date: row.date.toISOString().split('T')[0],
+      tokens: parseInt(row.tokens) || 0
+    }));
+    
+    // Get recent activity
+    const recentActivityResult = await pool.query(`
+      SELECT 
+        timestamp,
+        model,
+        provider,
+        total_tokens as tokens
+      FROM usage_logs 
+      WHERE user_id = $1 AND type = 'completion'${timeQuery}
+      ORDER BY timestamp DESC
+      LIMIT 10
+    `, params);
+    
+    const recentActivity = recentActivityResult.rows.map((row: RecentActivityRow) => ({
+      timestamp: row.timestamp.toISOString(),
+      model: row.model,
+      provider: row.provider,
+      tokens: parseInt(row.total_tokens) || 0
+    }));
+    
     return {
       summary,
-      modelBreakdown: Object.values(modelBreakdown),
-      toolUsage: Object.entries(toolUsage).map(([name, count]) => ({ name, count })),
-      dailyUsage: Object.entries(dailyUsage).map(([date, tokens]) => ({ date, tokens })),
-      recentActivity: recentActivitiesLimited
+      modelBreakdown,
+      toolUsage,
+      dailyUsage,
+      recentActivity
     };
-    
   } catch (error) {
-    console.error('Error processing usage logs:', error);
-    throw error;
+    console.error('Error processing usage stats:', error);
+    // Return empty data if database query fails
+    return {
+      summary: { totalTokens: 0, inputTokens: 0, outputTokens: 0, totalMessages: 0 },
+      modelBreakdown: [],
+      toolUsage: [],
+      dailyUsage: [],
+      recentActivity: []
+    };
   }
 }
 
@@ -157,8 +207,8 @@ export async function GET(req: NextRequest) {
       endDate = new Date(endDateParam);
     }
     
-    // Process logs and return usage statistics
-    const stats = await processLogs(userId, startDate, endDate);
+    // Get usage statistics from database
+    const stats = await getUsageStats(userId, startDate, endDate);
     
     return NextResponse.json(stats);
   } catch (error) {

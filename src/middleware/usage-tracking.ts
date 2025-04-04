@@ -36,7 +36,8 @@ export async function trackApiUsage(request: NextRequest) {
       stream: !!requestBody.stream
     };
     
-    appendLog(userId, promptData);
+    // Log using the edge-compatible logger
+    await appendLog(userId, promptData);
   } catch (e) {
     console.error('Failed to process request for usage tracking:', e);
   }

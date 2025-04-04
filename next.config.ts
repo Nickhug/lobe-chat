@@ -8,6 +8,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const buildWithDocker = process.env.DOCKER === 'true';
 const enableReactScan = !!process.env.REACT_SCAN_MONITOR_API_KEY;
 const isUsePglite = process.env.NEXT_PUBLIC_CLIENT_DB === 'pglite';
+const useNeonDB = !!process.env.DATABASE_URL || !!process.env.POSTGRES_URL;
 
 // if you need to proxy the api endpoint to remote server
 
@@ -31,6 +32,7 @@ const nextConfig: NextConfig = {
     ],
     webVitalsAttribution: ['CLS', 'LCP'],
     webpackMemoryOptimizations: true,
+    serverComponentsExternalPackages: useNeonDB ? ['@neondatabase/serverless'] : [],
   },
   async headers() {
     return [

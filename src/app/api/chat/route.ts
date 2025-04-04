@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appendLog } from '@/middleware/usage-tracking';
 
 // Define interface for the tool_calls
 interface ToolCall {
@@ -11,86 +10,79 @@ interface ToolCall {
   };
 }
 
+// Mock function for testing purposes - replace with actual implementation
 export async function POST(req: NextRequest) {
   try {
-    // Get the request body
     const requestBody = await req.json();
-
-    // Extract user ID from headers or cookies
+    
+    // Extract user ID from request headers or cookies
     const userId = req.headers.get('x-user-id') || 
                    req.cookies.get('user_id')?.value || 
                    'anonymous';
-
-    // TODO: This is where you would call your existing chat completion function
-    // For now, we'll just use this placeholder for testing the usage tracking
     
-    // Call your existing chat API
-    // For example: const response = await yourChatCompletionFunction(requestBody);
-    
-    // Mock response for testing
-    const response = {
-      id: 'mock-response-id',
+    // Log the prompt/request data
+    const promptData = {
+      type: 'prompt',
       model: requestBody.model,
-      provider: requestBody.provider,
-      usage: {
-        prompt_tokens: 100,
-        completion_tokens: 50,
-        total_tokens: 150
-      },
-      choices: [
-        {
-          message: {
-            content: "This is a test response for usage tracking."
-          }
-        }
-      ],
-      // Mock tool calls for testing
-      tool_calls: [] as ToolCall[]
+      provider: requestBody.provider || 'unknown',
+      userId,
+      messageId: requestBody.messageId || crypto.randomUUID(),
+      sessionId: requestBody.sessionId,
+      promptLength: JSON.stringify(requestBody.messages || []).length,
+      stream: !!requestBody.stream
     };
-
-    // Track completion usage
-    try {
-      // Create completion log entry
-      const completionData = {
-        type: 'completion',
-        userId,
-        model: requestBody.model,
-        provider: requestBody.provider || 'unknown',
-        messageId: requestBody.messageId,
-        sessionId: requestBody.sessionId,
-        inputTokens: response.usage.prompt_tokens || 0,
-        outputTokens: response.usage.completion_tokens || 0,
-        totalTokens: response.usage.total_tokens || 0
-      };
-      
-      // Log completion data
-      appendLog(userId, completionData);
-      
-      // Also track tool usage if any
-      if (response.tool_calls && response.tool_calls.length > 0) {
-        for (const tool of response.tool_calls) {
-          const toolLogEntry = {
-            type: 'tool',
-            userId,
-            toolName: tool.function?.name || 'unknown',
-            messageId: requestBody.messageId,
-            sessionId: requestBody.sessionId
-          };
-          
-          appendLog(userId, toolLogEntry);
+    
+    // Log prompt data via API call
+    fetch('/api/usage/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(promptData)
+    }).catch(e => console.error('Failed to log prompt data:', e));
+    
+    // Mock response for testing - replace with actual LLM call
+    const response = {
+      id: crypto.randomUUID(),
+      model: requestBody.model || 'gpt-4',
+      provider: requestBody.provider || 'openai',
+      usage: {
+        total_tokens: 1500,
+        prompt_tokens: 500,
+        completion_tokens: 1000
+      },
+      choices: [{
+        message: {
+          content: "This is a mock response for testing the usage tracking system."
         }
-      }
-    } catch (error) {
-      // Log error but don't fail the request
-      console.error('Failed to log completion usage data:', error);
-    }
-
+      }],
+      tool_calls: []
+    };
+    
+    // Log the completion data
+    const completionData = {
+      type: 'completion',
+      model: response.model,
+      provider: response.provider,
+      userId,
+      messageId: requestBody.messageId,
+      sessionId: requestBody.sessionId,
+      totalTokens: response.usage.total_tokens,
+      inputTokens: response.usage.prompt_tokens,
+      outputTokens: response.usage.completion_tokens
+    };
+    
+    // Log completion data via API call
+    fetch('/api/usage/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(completionData)
+    }).catch(e => console.error('Failed to log completion data:', e));
+    
     // Return the response
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error in chat API:', error);
+    console.error('Error in chat endpoint:', error);
     return NextResponse.json(
-      { error: 'Failed to process chat request' },
+      { error: 'An error occurred processing your request' },
       { status: 500 }
     );
   }

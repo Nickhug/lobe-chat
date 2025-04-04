@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-import readline from 'readline';
+import fs from 'node:fs';
+import path from 'node:path';
+import readline from 'node:readline';
+import { promises as fsPromises } from 'node:fs';
 
 // Define log directory
 const LOGS_DIR = process.env.USAGE_LOGS_DIR || path.join(process.cwd(), 'data', 'usage-logs');
@@ -11,6 +12,7 @@ async function processLogs(userId: string, startDate?: Date, endDate?: Date) {
   try {
     // Get all log files for this user
     if (!fs.existsSync(LOGS_DIR)) {
+      await fsPromises.mkdir(LOGS_DIR, { recursive: true });
       return {
         summary: { totalTokens: 0, inputTokens: 0, outputTokens: 0, totalMessages: 0 },
         modelBreakdown: [],
@@ -20,7 +22,7 @@ async function processLogs(userId: string, startDate?: Date, endDate?: Date) {
       };
     }
 
-    const files = fs.readdirSync(LOGS_DIR);
+    const files = await fsPromises.readdir(LOGS_DIR);
     const userFiles = files.filter(file => file.startsWith(userId + '_'));
     
     // Initialize accumulators
@@ -39,7 +41,7 @@ async function processLogs(userId: string, startDate?: Date, endDate?: Date) {
     // Process each log file
     for (const file of userFiles) {
       const filePath = path.join(LOGS_DIR, file);
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const fileContent = await fsPromises.readFile(filePath, 'utf8');
       const lines = fileContent.split('\n').filter(Boolean);
       
       // Process each log entry

@@ -4,6 +4,10 @@
 import { Pool } from '@neondatabase/serverless';
 import { createPool } from '@vercel/postgres';
 
+// Debug connection info
+const DATABASE_URL = process.env.DATABASE_URL || '';
+console.log(`[USAGE DB] Database connection available: ${!!DATABASE_URL}`);
+
 // Initialize database connection
 const pool = process.env.POSTGRES_URL 
   ? createPool({ connectionString: process.env.POSTGRES_URL })
@@ -12,6 +16,7 @@ const pool = process.env.POSTGRES_URL
 // Setup table if it doesn't exist
 async function ensureTable() {
   try {
+    console.log('[USAGE DB] Attempting to ensure table exists...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS usage_logs (
         id SERIAL PRIMARY KEY,
@@ -34,21 +39,24 @@ async function ensureTable() {
       CREATE INDEX IF NOT EXISTS idx_usage_logs_timestamp ON usage_logs(timestamp);
       CREATE INDEX IF NOT EXISTS idx_usage_logs_type ON usage_logs(type);
     `);
+    console.log('[USAGE DB] Table check/creation successful');
     return true;
   } catch (error) {
-    console.error('Failed to ensure usage_logs table exists:', error);
+    console.error('[USAGE DB] Failed to ensure usage_logs table exists:', error);
     return false;
   }
 }
 
 // Ensure table exists when module is loaded
-ensureTable().catch(console.error);
+ensureTable().catch(error => console.error('[USAGE DB] Table initialization error:', error));
 
 // Function to log entries to Neon DB
 export async function appendLog(userId: string, data: any) {
   try {
     // Only run on server
     if (typeof window !== 'undefined') return true;
+    
+    console.log(`[USAGE LOG] Attempting to log data for user: ${userId}, type: ${data.type}`);
     
     const timestamp = new Date();
     
@@ -89,9 +97,10 @@ export async function appendLog(userId: string, data: any) {
       ]
     );
     
+    console.log(`[USAGE LOG] Successfully logged ${type} data for user: ${userId}`);
     return true;
   } catch (error) {
-    console.error('Failed to write usage log to database:', error);
+    console.error('[USAGE LOG] Failed to write usage log to database:', error);
     return false;
   }
 } 

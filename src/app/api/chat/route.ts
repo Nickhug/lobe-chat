@@ -13,6 +13,7 @@ interface ToolCall {
 
 // Mock function for testing purposes - replace with actual implementation
 export async function POST(req: NextRequest) {
+  console.log('[CHAT API] Processing new chat request');
   try {
     const requestBody = await req.json();
     
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest) {
     const userId = req.headers.get('x-user-id') || 
                    req.cookies.get('user_id')?.value || 
                    'anonymous';
+    
+    console.log(`[CHAT API] Request from user: ${userId}, model: ${requestBody.model || 'unknown'}`);
     
     // Log the prompt/request data
     const promptData = {
@@ -34,7 +37,9 @@ export async function POST(req: NextRequest) {
     };
     
     // Log prompt data directly with appendLog
-    await appendLog(userId, promptData);
+    console.log('[CHAT API] Logging prompt data to database');
+    const promptLogSuccess = await appendLog(userId, promptData);
+    console.log(`[CHAT API] Prompt logging result: ${promptLogSuccess ? 'success' : 'failed'}`);
     
     // Mock response for testing - replace with actual LLM call
     const response = {
@@ -68,12 +73,14 @@ export async function POST(req: NextRequest) {
     };
     
     // Log completion data directly with appendLog
-    await appendLog(userId, completionData);
+    console.log('[CHAT API] Logging completion data to database');
+    const completionLogSuccess = await appendLog(userId, completionData);
+    console.log(`[CHAT API] Completion logging result: ${completionLogSuccess ? 'success' : 'failed'}`);
     
     // Return the response
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error in chat endpoint:', error);
+    console.error('[CHAT API] Error in chat endpoint:', error);
     return NextResponse.json(
       { error: 'An error occurred processing your request' },
       { status: 500 }

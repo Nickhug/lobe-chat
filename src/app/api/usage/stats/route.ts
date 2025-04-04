@@ -31,7 +31,7 @@ interface RecentActivityRow {
   timestamp: Date;
   model: string;
   provider: string;
-  total_tokens: string;
+  tokens: string;
 }
 
 // Initialize database connection
@@ -41,6 +41,7 @@ const pool = process.env.POSTGRES_URL
 
 // Function to get usage statistics from Neon DB
 async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
+  console.log(`[STATS API] Getting stats for user: ${userId}`);
   try {
     // Initialize response structure
     const summary = {
@@ -57,12 +58,16 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     if (startDate) {
       timeQuery += ' AND timestamp >= $2';
       params.push(startDate);
+      console.log(`[STATS API] Filtering from: ${startDate.toISOString()}`);
     }
     
     if (endDate) {
       timeQuery += ` AND timestamp <= $${params.length + 1}`;
       params.push(endDate);
+      console.log(`[STATS API] Filtering to: ${endDate.toISOString()}`);
     }
+    
+    console.log(`[STATS API] Executing summary query for user: ${userId}`);
     
     // Get summary stats for completions
     const summaryResult = await pool.query(`
@@ -75,6 +80,8 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       WHERE user_id = $1 AND type = 'completion'${timeQuery}
     `, params);
     
+    console.log(`[STATS API] Summary rows returned: ${summaryResult.rows.length}`);
+    
     if (summaryResult.rows.length > 0) {
       const row = summaryResult.rows[0] as SummaryRow;
       summary.totalTokens = parseInt(row.total_tokens) || 0;
@@ -82,6 +89,9 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       summary.outputTokens = parseInt(row.output_tokens) || 0;
       summary.totalMessages = parseInt(row.total_messages) || 0;
     }
+    
+    console.log(`[STATS API] Summary stats: ${JSON.stringify(summary)}`);
+    console.log(`[STATS API] Executing model breakdown query`);
     
     // Get model breakdown
     const modelBreakdownResult = await pool.query(`
@@ -95,12 +105,16 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       GROUP BY provider, model
     `, params);
     
+    console.log(`[STATS API] Model breakdown rows: ${modelBreakdownResult.rows.length}`);
+    
     const modelBreakdown = modelBreakdownResult.rows.map((row: ModelBreakdownRow) => ({
       provider: row.provider,
       model: row.model,
       totalTokens: parseInt(row.total_tokens) || 0,
       messageCount: parseInt(row.message_count) || 0
     }));
+    
+    console.log(`[STATS API] Executing tool usage query`);
     
     // Get tool usage
     const toolUsageResult = await pool.query(`
@@ -112,10 +126,14 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       GROUP BY tool_name
     `, params);
     
+    console.log(`[STATS API] Tool usage rows: ${toolUsageResult.rows.length}`);
+    
     const toolUsage = toolUsageResult.rows.map((row: ToolUsageRow) => ({
       name: row.name,
       count: parseInt(row.count) || 0
     }));
+    
+    console.log(`[STATS API] Executing daily usage query`);
     
     // Get daily usage
     const dailyUsageResult = await pool.query(`
@@ -128,10 +146,14 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       ORDER BY date DESC
     `, params);
     
+    console.log(`[STATS API] Daily usage rows: ${dailyUsageResult.rows.length}`);
+    
     const dailyUsage = dailyUsageResult.rows.map((row: DailyUsageRow) => ({
       date: row.date.toISOString().split('T')[0],
       tokens: parseInt(row.tokens) || 0
     }));
+    
+    console.log(`[STATS API] Executing recent activity query`);
     
     // Get recent activity
     const recentActivityResult = await pool.query(`
@@ -146,22 +168,27 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       LIMIT 10
     `, params);
     
+    console.log(`[STATS API] Recent activity rows: ${recentActivityResult.rows.length}`);
+    
     const recentActivity = recentActivityResult.rows.map((row: RecentActivityRow) => ({
       timestamp: row.timestamp.toISOString(),
       model: row.model,
       provider: row.provider,
-      tokens: parseInt(row.total_tokens) || 0
+      tokens: parseInt(row.tokens) || 0
     }));
     
-    return {
+    const result = {
       summary,
       modelBreakdown,
       toolUsage,
       dailyUsage,
       recentActivity
     };
+    
+    console.log(`[STATS API] Successfully retrieved usage data for user: ${userId}`);
+    return result;
   } catch (error) {
-    console.error('Error processing usage stats:', error);
+    console.error('[STATS API] Error processing usage stats:', error);
     // Return empty data if database query fails
     return {
       summary: { totalTokens: 0, inputTokens: 0, outputTokens: 0, totalMessages: 0 },
@@ -174,6 +201,7 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
 }
 
 export async function GET(req: NextRequest) {
+  console.log('[STATS API] Received stats request');
   try {
     const { searchParams } = new URL(req.url);
     
@@ -185,7 +213,10 @@ export async function GET(req: NextRequest) {
       userId = headerUserId || cookieUserId;
     }
     
+    console.log(`[STATS API] Getting stats for user ID: ${userId || 'not provided'}`);
+    
     if (!userId) {
+      console.log('[STATS API] Missing user ID, returning 400');
       return NextResponse.json(
         { error: 'User ID is required' }, 
         { status: 400 }
@@ -201,10 +232,12 @@ export async function GET(req: NextRequest) {
     
     if (startDateParam) {
       startDate = new Date(startDateParam);
+      console.log(`[STATS API] Start date: ${startDate.toISOString()}`);
     }
     
     if (endDateParam) {
       endDate = new Date(endDateParam);
+      console.log(`[STATS API] End date: ${endDate.toISOString()}`);
     }
     
     // Get usage statistics from database
@@ -212,7 +245,7 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json(stats);
   } catch (error) {
-    console.error('Error retrieving usage stats:', error);
+    console.error('[STATS API] Error retrieving usage stats:', error);
     return NextResponse.json(
       { error: 'Failed to retrieve usage statistics' },
       { status: 500 }

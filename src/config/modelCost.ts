@@ -16,11 +16,11 @@ export const modelCostConfig: ModelCostConfig = {
   
   // Set specific model multipliers (model name as key)
   modelMultipliers: {
-    'gpt-4': 2.0,
-    'gpt-4-turbo': 2.0,
+    'o3-mini': 2.0,
+    'o1-mini': 2.0,
     'gpt-4o': 2.0,
-    'claude-3-opus': 3.0,
-    'claude-3-sonnet': 1.5,
+    'claude-3-opus': 8.0,
+    'claude-3.7-sonnet': 2.3,
     'gemini-pro': 1.0,
     'gemini-ultra': 2.5,
     // Add more models as needed

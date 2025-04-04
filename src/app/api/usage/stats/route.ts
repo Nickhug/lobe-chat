@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from '@neondatabase/serverless';
 import { createPool } from '@vercel/postgres';
+import { getUserSubscription, calculateUserTokenLimit, calculateUserToolCallLimit } from '@/config/subscriptionPlans';
 
 // Define row types
 interface SummaryRow {
@@ -43,10 +44,26 @@ const pool = process.env.POSTGRES_URL
 async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
   console.log(`[STATS API] Getting stats for user: ${userId}`);
   try {
+    // Get user subscription data
+    const subscription = await getUserSubscription(userId);
+    const tokenLimit = calculateUserTokenLimit(subscription);
+    const toolCallLimit = calculateUserToolCallLimit(subscription);
+    
     // Initialize response structure
     const summary = {
       totalTokens: 0,
-      totalMessages: 0
+      totalMessages: 0,
+      totalToolCalls: 0,
+      subscription: {
+        plan: subscription.plan,
+        expiresAt: subscription.expiresAt.toISOString(),
+        tokenLimit,
+        toolCallLimit,
+        extraTokens: subscription.extraTokens,
+        extraToolCalls: subscription.extraToolCalls,
+        tokenUsagePercentage: 0, // Will be calculated after fetching usage
+        toolCallUsagePercentage: 0, // Will be calculated after fetching usage
+      }
     };
     
     // Build the WHERE clause with parameters
@@ -84,7 +101,7 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
       summary.totalMessages = parseInt(row.total_messages) || 0;
     }
     
-    // Also count tool messages for total message count
+    // Also count tool messages for total message count and tool call count
     const toolMessageCountResult = await pool.query(`
       SELECT COUNT(*) as tool_message_count
       FROM usage_logs 
@@ -94,7 +111,12 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     if (toolMessageCountResult.rows.length > 0) {
       const toolCount = parseInt(toolMessageCountResult.rows[0].tool_message_count) || 0;
       summary.totalMessages += toolCount;
+      summary.totalToolCalls = toolCount;
     }
+    
+    // Calculate usage percentages for subscription limits
+    summary.subscription.tokenUsagePercentage = Math.min(100, Math.round((summary.totalTokens / tokenLimit) * 100));
+    summary.subscription.toolCallUsagePercentage = Math.min(100, Math.round((summary.totalToolCalls / toolCallLimit) * 100));
     
     console.log(`[STATS API] Summary stats: ${JSON.stringify(summary)}`);
     console.log(`[STATS API] Executing model breakdown query`);
@@ -211,7 +233,18 @@ async function getUsageStats(userId: string, startDate?: Date, endDate?: Date) {
     return {
       summary: { 
         totalTokens: 0,
-        totalMessages: 0
+        totalMessages: 0,
+        totalToolCalls: 0,
+        subscription: {
+          plan: 'free',
+          expiresAt: new Date().toISOString(),
+          tokenLimit: 100000,
+          toolCallLimit: 50,
+          extraTokens: 0,
+          extraToolCalls: 0,
+          tokenUsagePercentage: 0,
+          toolCallUsagePercentage: 0,
+        }
       },
       modelBreakdown: [],
       toolUsage: [],

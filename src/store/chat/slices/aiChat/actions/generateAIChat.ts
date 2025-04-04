@@ -27,6 +27,8 @@ import { MessageSemanticSearchChunk } from '@/types/rag';
 import { setNamespace } from '@/utils/storeDebug';
 
 import { chatSelectors, topicSelectors } from '../../../selectors';
+import { userProfileSelectors } from '@/store/user/selectors';
+import { useUserStore } from '@/store/user';
 
 const n = setNamespace('ai');
 
@@ -575,12 +577,15 @@ export const generateAIChat: StateCreator<
         // Log usage data if available
         if (usage && usage.totalTokens) {
           try {
+            // Get proper user ID from auth store instead of session ID
+            const authUserId = userProfileSelectors.userId(useUserStore.getState());
+            
             // Create usage data object for logging
             const usageData = {
               type: 'completion',
               model,
               provider,
-              userId: get().activeId || 'anonymous',
+              userId: authUserId || get().activeId || 'anonymous',
               messageId,
               sessionId: get().activeId,
               totalTokens: usage.totalTokens,

@@ -27,6 +27,8 @@ import { setNamespace } from '@/utils/storeDebug';
 
 import { chatSelectors } from '../message/selectors';
 import { threadSelectors } from '../thread/selectors';
+import { userProfileSelectors } from '@/store/user/selectors';
+import { useUserStore } from '@/store/user';
 
 const n = setNamespace('plugin');
 
@@ -270,10 +272,12 @@ export const chatPlugin: StateCreator<
 
       // Log tool usage to the usage tracking system
       try {
-        const userId = get().activeId || 'anonymous';
+        // Get proper user ID from auth store instead of session ID
+        const authUserId = userProfileSelectors.userId(useUserStore.getState());
+        
         const usageData = {
           type: 'tool',
-          userId,
+          userId: authUserId || get().activeId || 'anonymous',
           messageId: id,
           sessionId: get().activeId,
           toolName: `${payload.identifier}:${payload.apiName}`,

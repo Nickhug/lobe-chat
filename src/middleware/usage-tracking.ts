@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { appendLog } from '@/utils/logger/usageLogger';
 
+// Helper function to extract user ID from various sources in the request
+function extractUserId(request: NextRequest): string {
+  // Try to get the user ID from various possible sources
+  const userId = 
+    // Check auth-specific headers first
+    request.headers.get('x-auth-user-id') || 
+    request.headers.get('x-user-id') || 
+    // Check auth cookies
+    request.cookies.get('auth0_user_id')?.value ||
+    request.cookies.get('clerk_user_id')?.value ||
+    request.cookies.get('next-auth.user-id')?.value ||
+    request.cookies.get('user_id')?.value || 
+    // Fallback
+    'anonymous';
+  
+  return userId;
+}
+
 // Middleware function to track API usage
 export async function trackApiUsage(request: NextRequest) {
   console.log('[MIDDLEWARE] Processing request:', request.url);
@@ -20,11 +38,8 @@ export async function trackApiUsage(request: NextRequest) {
   
   console.log('[MIDDLEWARE] Processing chat API POST request');
   
-  // Extract user ID from auth header or cookie
-  const userId = request.headers.get('x-user-id') || 
-                 request.cookies.get('user_id')?.value || 
-                 'anonymous';
-  
+  // Extract user ID from various sources
+  const userId = extractUserId(request);
   console.log(`[MIDDLEWARE] User ID: ${userId}`);
 
   // Clone the request to read its body

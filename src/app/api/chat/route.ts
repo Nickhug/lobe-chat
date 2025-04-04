@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appendLog } from '@/utils/logger/usageLogger';
+import { userProfileSelectors } from '@/store/user/selectors';
+import { useUserStore } from '@/store/user';
 
 // Define interface for the tool_calls
 interface ToolCall {
@@ -14,36 +16,44 @@ interface ToolCall {
 // Utility function to safely get user ID
 function getUserId(req: NextRequest): string {
   try {
-    // Try from header first
-    const headerUserId = req.headers.get('x-user-id');
-    if (headerUserId) {
-      console.log(`[CHAT API] Got user ID from header: ${headerUserId}`);
-      return headerUserId;
+    // Try to get authenticated user ID from user store first (client-side state not available in edge)
+    // Try from auth-specific headers (preferred as more secure)
+    const authUserId = 
+      req.headers.get('x-auth-user-id') ||
+      req.headers.get('x-user-id') ||
+      req.headers.get('x-clerk-user-id') ||
+      req.headers.get('authorization')?.replace('Bearer ', '');
+    
+    if (authUserId) {
+      console.log(`[CHAT API] Got user ID from auth header: ${authUserId}`);
+      return authUserId;
     }
     
-    // Try from cookies
-    const cookieUserId = req.cookies.get('user_id')?.value;
-    if (cookieUserId) {
-      console.log(`[CHAT API] Got user ID from cookie: ${cookieUserId}`);
-      return cookieUserId;
-    }
+    // Try from auth cookies
+    const authCookies = [
+      'auth0_user_id',
+      '__clerk_db_user_id',
+      'next-auth.user-id',
+      'next-auth.session-token',
+      'user_id'
+    ];
     
-    // Try Clerk or NextAuth ID from cookie/header if available
-    const clerkUserId = req.cookies.get('__clerk_db_user_id')?.value || 
-                       req.headers.get('x-clerk-user-id');
-    if (clerkUserId) {
-      console.log(`[CHAT API] Got user ID from Clerk: ${clerkUserId}`);
-      return clerkUserId;
+    for (const cookieName of authCookies) {
+      const cookieValue = req.cookies.get(cookieName)?.value;
+      if (cookieValue) {
+        console.log(`[CHAT API] Got user ID from ${cookieName} cookie: ${cookieValue}`);
+        return cookieValue;
+      }
     }
     
     // Log all cookie names to help debugging
     const cookieNames = Array.from(req.cookies.getAll()).map(c => c.name);
     console.log(`[CHAT API] Available cookies: ${cookieNames.join(', ')}`);
     
-    // Check for auth cookie patterns
+    // Look for any auth-related cookies
     for (const cookie of req.cookies.getAll()) {
       if (cookie.name.includes('auth') || cookie.name.includes('user') || cookie.name.includes('session')) {
-        console.log(`[CHAT API] Found potential auth cookie: ${cookie.name}`);
+        console.log(`[CHAT API] Found potential auth cookie: ${cookie.name} = ${cookie.value.substring(0, 10)}...`);
       }
     }
     

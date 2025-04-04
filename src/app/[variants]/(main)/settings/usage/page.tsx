@@ -73,7 +73,16 @@ export default function UsageDashboard() {
           url += `&endDate=${dateRange[1].toISOString()}`;
         }
         
-        const response = await fetch(url);
+        const headers: HeadersInit = {};
+        
+        // Only add headers if userId is defined
+        if (userId) {
+          headers['x-user-id'] = userId;
+          headers['x-auth-user-id'] = userId;
+        }
+        
+        const response = await fetch(url, { headers });
+        
         if (!response.ok) {
           throw new Error('Failed to fetch usage data');
         }

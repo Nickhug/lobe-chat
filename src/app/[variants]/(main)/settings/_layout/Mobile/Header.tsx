@@ -35,7 +35,31 @@ const Header = memo(() => {
         <MobileNavBarTitle
           title={
             <Flexbox align={'center'} gap={8} horizontal>
-              <span style={{ lineHeight: 1.2 }}> {t(`tab.${activeSettingsKey}`)}</span>
+              <span style={{ lineHeight: 1.2 }}> 
+                {activeSettingsKey === 'usage' 
+                  ? 'Usage Tracking'
+                  : activeSettingsKey === SettingsTabs.Provider 
+                    ? t('tab.provider')
+                    : activeSettingsKey === SettingsTabs.TTS
+                      ? t('tab.tts')
+                      : activeSettingsKey === SettingsTabs.About
+                        ? t('tab.about')
+                        : activeSettingsKey === SettingsTabs.Agent
+                          ? t('tab.agent')
+                          : activeSettingsKey === SettingsTabs.Hotkey
+                            ? t('tab.hotkey')
+                            : activeSettingsKey === SettingsTabs.Common
+                              ? t('tab.common')
+                              : activeSettingsKey === SettingsTabs.Sync
+                                ? t('tab.sync')
+                                : activeSettingsKey === SettingsTabs.LLM
+                                  ? t('tab.llm')
+                                  : activeSettingsKey === SettingsTabs.Storage
+                                    ? t('tab.storage') 
+                                    : activeSettingsKey === SettingsTabs.SystemAgent
+                                      ? t('tab.system-agent')
+                                      : String(activeSettingsKey)}
+              </span>
               {activeSettingsKey === SettingsTabs.Sync && (
                 <Tag bordered={false} color={'warning'}>
                   {t('tab.experiment')}

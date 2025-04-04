@@ -47,7 +47,14 @@ const defaultMiddleware = async (request: NextRequest) => {
 
   // Process API usage tracking for chat endpoints
   if (url.pathname.startsWith('/api/chat') && request.method === 'POST') {
-    await trackApiUsage(request);
+    console.log('[MIDDLEWARE ROOT] Handling chat endpoint request:', url.pathname);
+    try {
+      await trackApiUsage(request);
+      console.log('[MIDDLEWARE ROOT] Usage tracking middleware completed');
+    } catch (error) {
+      console.error('[MIDDLEWARE ROOT] Error in usage tracking middleware:', error);
+      // Continue with the request even if tracking fails
+    }
   }
 
   // skip other api requests

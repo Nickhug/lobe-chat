@@ -182,12 +182,15 @@ ENV HOSTNAME="0.0.0.0" \
 ENV NEXT_PUBLIC_AGENTS_INDEX_URL="https://lobe-chat-agents-sable.vercel.app/index.en-US.json" \
     NEXT_PUBLIC_PLUGINS_INDEX_URL="https://gatewa-bice.vercel.app/index.json"
 
+# Copy system_role.txt file to the container
+COPY system_role.txt /app/system_role.txt
+
 # General Variables
 ENV ACCESS_CODE="" \
     APP_URL="" \
     API_KEY_SELECT_MODE="" \
-    DEFAULT_AGENT_CONFIG="" \
-    SYSTEM_AGENT="" \
+    DEFAULT_AGENT_CONFIG="model=gpt-4o;provider=openai;systemRole=$$(cat /app/system_role.txt);params.temperature=0.7;chatConfig.enableAutoCreateTopic=true;chatConfig.historyCount=10" \
+    SYSTEM_AGENT="topic=anthropic/claude-3-5-haiku-20241022,translation=anthropic/claude-3-5-haiku-20241022,historyCompress=anthropic/claude-3-5-haiku-20241022,agentMeta=anthropic/claude-3-5-haiku-20241022,queryRewrite=anthropic/claude-3-5-haiku-20241022,thread=anthropic/claude-3-5-haiku-20241022" \
     FEATURE_FLAGS="" \
     PROXY_URL=""
 

@@ -189,7 +189,7 @@ COPY system_role.txt /app/system_role.txt
 ENV ACCESS_CODE="" \
     APP_URL="" \
     API_KEY_SELECT_MODE="" \
-    DEFAULT_AGENT_CONFIG="model=gpt-4o;provider=openai;systemRole=$$(cat /app/system_role.txt);params.temperature=0.7;chatConfig.enableAutoCreateTopic=true;chatConfig.historyCount=10" \
+    DEFAULT_AGENT_CONFIG="model=gpt-4o;provider=openai;params.temperature=0.7;chatConfig.enableAutoCreateTopic=true;chatConfig.historyCount=10" \
     SYSTEM_AGENT="topic=anthropic/claude-3-5-haiku-20241022,translation=anthropic/claude-3-5-haiku-20241022,historyCompress=anthropic/claude-3-5-haiku-20241022,agentMeta=anthropic/claude-3-5-haiku-20241022,queryRewrite=anthropic/claude-3-5-haiku-20241022,thread=anthropic/claude-3-5-haiku-20241022" \
     FEATURE_FLAGS="" \
     PROXY_URL=""

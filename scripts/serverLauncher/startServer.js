@@ -6,6 +6,7 @@ const { spawn } = require('node:child_process');
 const DB_MIGRATION_SCRIPT_PATH = '/app/docker.cjs';
 const SERVER_SCRIPT_PATH = '/app/server.js';
 const PROXYCHAINS_CONF_PATH = '/etc/proxychains4.conf';
+const SYSTEM_ROLE_PATH = '/app/system_role.txt';
 
 // Function to check if a string is a valid IP address
 const isValidIP = (ip, version = 4) => {
@@ -111,6 +112,42 @@ const runScript = (scriptPath, useProxy = false) => {
   });
 };
 
+// Function to read system role and update DEFAULT_AGENT_CONFIG environment variable
+const setupSystemRole = async () => {
+  try {
+    // Check if system_role.txt exists
+    await fs.access(SYSTEM_ROLE_PATH);
+    
+    // Read the system role file
+    const systemRoleContent = await fs.readFile(SYSTEM_ROLE_PATH, 'utf8');
+    
+    if (systemRoleContent && process.env.DEFAULT_AGENT_CONFIG) {
+      // Check if DEFAULT_AGENT_CONFIG contains the placeholder
+      if (process.env.DEFAULT_AGENT_CONFIG.includes('$$(cat /app/system_role.txt)')) {
+        // Replace the placeholder with the actual content
+        process.env.DEFAULT_AGENT_CONFIG = process.env.DEFAULT_AGENT_CONFIG.replace(
+          '$$(cat /app/system_role.txt)', 
+          systemRoleContent
+        );
+        console.log('✅ System Role: Successfully loaded system role into DEFAULT_AGENT_CONFIG');
+      } else if (!process.env.DEFAULT_AGENT_CONFIG.includes('systemRole=')) {
+        // Add systemRole if it doesn't exist
+        process.env.DEFAULT_AGENT_CONFIG += `;systemRole=${systemRoleContent}`;
+        console.log('✅ System Role: Added system role to DEFAULT_AGENT_CONFIG');
+      }
+    }
+    console.log('-------------------------------------');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log('⚠️ System Role: File not found at ' + SYSTEM_ROLE_PATH + '. Using default configuration.');
+    } else {
+      console.error('❌ Error loading system role:');
+      console.error(err);
+    }
+    console.log('-------------------------------------');
+  }
+};
+
 // Main function to run the server with optional proxy
 const runServer = async () => {
   const PROXY_URL = process.env.PROXY_URL || ''; // Default empty string to avoid undefined errors
@@ -126,6 +163,9 @@ const runServer = async () => {
 (async () => {
   console.log('🌐 DNS Server:', dns.getServers());
   console.log('-------------------------------------');
+
+  // Setup system role first to ensure environment is properly configured
+  await setupSystemRole();
 
   if (process.env.DATABASE_DRIVER) {
     try {

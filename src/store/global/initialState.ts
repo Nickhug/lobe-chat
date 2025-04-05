@@ -110,7 +110,7 @@ export const INITIAL_STATUS = {
   showFilePanel: true,
   showHotkeyHelper: false,
   showSessionPanel: true,
-  showSystemRole: false,
+  showSystemRole: true,
   themeMode: 'auto',
   threadInputHeight: 200,
   zenMode: false,

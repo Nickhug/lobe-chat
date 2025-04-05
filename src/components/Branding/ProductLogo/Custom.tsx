@@ -37,19 +37,16 @@ const CustomImageLogo = memo<Omit<ImageProps, 'alt' | 'src'> & { size: number }>
   ({ size, ...rest }) => {
     return (
       <div style={{ height: size, display: 'flex', alignItems: 'center' }}>
-        <Image
+        <img
           alt={BRANDING_NAME}
-          height={BRANDING_LOGO_HEIGHT || size}
-          width={BRANDING_LOGO_WIDTH || size * 3}
           src={BRANDING_HEADER_LOGO_URL}
           style={{ 
-            objectFit: 'contain', 
-            maxHeight: '100%', 
-            width: 'auto', 
             height: 'auto',
-            maxWidth: '100%'
+            maxHeight: size,
+            width: 'auto',
+            maxWidth: `${size * 3}px`,
+            objectFit: 'contain'
           }}
-          unoptimized={true}
           {...rest}
         />
       </div>

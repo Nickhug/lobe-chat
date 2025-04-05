@@ -42,8 +42,8 @@ const SystemRole = memo(() => {
     s.toggleSystemRole,
   ]);
 
-  const [open, setOpen] = useMergeState(false, {
-    defaultValue: showSystemRole,
+  const [open, setOpen] = useMergeState(true, {
+    defaultValue: true,
     onChange: toggleSystemRole,
     value: showSystemRole,
   });

@@ -44,7 +44,7 @@ const CustomImageLogo = memo<Omit<ImageProps, 'alt' | 'src'> & { size: number }>
             height: 'auto',
             maxHeight: size,
             width: 'auto',
-            maxWidth: `${size * 3}px`,
+            maxWidth: `${size * 1.5}px`,
             objectFit: 'contain'
           }}
           {...rest}

@@ -11,8 +11,8 @@ export const BRANDING_TITLE_SUFFIX = process.env.NEXT_PUBLIC_TITLE_SUFFIX || '';
 export const BRANDING_CALL_TO_ACTION = process.env.NEXT_PUBLIC_CALL_TO_ACTION || '';
 export const BRANDING_LOGO_URL = '/images/logo/propert-logo.png'; // This will remain as favicon
 export const BRANDING_HEADER_LOGO_URL = '/images/logo/header/your-paragraph-text-4.png'; // This will be used in header
-export const BRANDING_LOGO_WIDTH = 200;
-export const BRANDING_LOGO_HEIGHT = 50;
+export const BRANDING_LOGO_WIDTH = 120;
+export const BRANDING_LOGO_HEIGHT = 40;
 
 export const ORG_NAME = 'Propert';
 

@@ -12,7 +12,8 @@ const SystemRole = memo(() => {
   const { isAgentEditable: showSystemRole } = useServerConfigStore(featureFlagsSelectors);
   const isInbox = useSessionStore(sessionSelectors.isInboxSession);
 
-  return showSystemRole && !isInbox && <SystemRoleContent />;
+  // Always show system role for Propert inbox, and respect server config for other chats
+  return showSystemRole && <SystemRoleContent />;
 });
 
 export default SystemRole;

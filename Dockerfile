@@ -182,8 +182,10 @@ ENV HOSTNAME="0.0.0.0" \
 ENV NEXT_PUBLIC_AGENTS_INDEX_URL="https://lobe-chat-agents-sable.vercel.app/index.en-US.json" \
     NEXT_PUBLIC_PLUGINS_INDEX_URL="https://gatewa-bice.vercel.app/index.json"
 
-# Copy system_role.txt file to the container
+# Copy system_role.txt file to the container for direct code usage
 COPY system_role.txt /app/system_role.txt
+# Also copy to the root for direct node.js access
+COPY system_role.txt /system_role.txt
 
 # General Variables
 ENV ACCESS_CODE="" \

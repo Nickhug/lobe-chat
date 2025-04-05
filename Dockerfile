@@ -184,8 +184,6 @@ ENV NEXT_PUBLIC_AGENTS_INDEX_URL="https://lobe-chat-agents-sable.vercel.app/inde
 
 # Copy system_role.txt file to the container for direct code usage
 COPY system_role.txt /app/system_role.txt
-# Also copy to the root for direct node.js access
-COPY system_role.txt /system_role.txt
 
 # General Variables
 ENV ACCESS_CODE="" \

@@ -39,9 +39,9 @@ export const generateMetadata = async (props: DynamicLayoutProps) => {
     },
     description: customDescription,
     icons: {
-      apple: BRANDING_LOGO_URL,
-      icon: BRANDING_LOGO_URL,
-      shortcut: BRANDING_LOGO_URL,
+      apple: '/apple-touch-icon.png',
+      icon: '/favicon.ico',
+      shortcut: '/favicon-32x32.ico',
     },
     manifest: noManifest ? undefined : '/manifest.json',
     metadataBase: new URL(OFFICIAL_URL),
